@@ -1,0 +1,14 @@
+{
+  "update_interval_minutes": 60,
+  "model_pool_size": 10,
+  "weights": {
+    "intelligence": 0.6,
+    "reasoning": 0.2,
+    "speed": 0.1,
+    "stability": 0.1
+  },
+  "overrides": {
+    "blacklist": [],
+    "priority_models": []
+  }
+}
