@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { X, Copy, ExternalLink } from "lucide-react";
+import { ProviderAvatar } from "@/components/ui/provider-avatar";
 import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,12 @@ export function DetailDrawer({ models }: { models: ModelStats[] }) {
     <Sheet open={open} onOpenChange={(v: boolean) => !v && closeDrawer()}>
       <SheetContent>
         <SheetHeader>
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <div className="text-[14px] font-semibold truncate">{model.id}</div>
-            <div className="text-[11px] text-(--color-fg-muted)">{model.provider}</div>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <ProviderAvatar provider={model.provider} size="md" />
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <div className="text-[14px] font-semibold truncate">{model.id}</div>
+              <div className="text-[11px] text-(--color-fg-muted)">{model.provider}</div>
+            </div>
           </div>
           <Button variant="ghost" size="icon" onClick={closeDrawer} aria-label="Close">
             <X className="w-4 h-4" />

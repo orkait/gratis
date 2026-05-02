@@ -2,6 +2,19 @@
 import { useStore } from "@/lib/store";
 import type { ProviderFilter } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ProviderAvatar } from "@/components/ui/provider-avatar";
+
+function providerNameForId(id: string): string {
+  const map: Record<string, string> = {
+    openrouter: "OpenRouter",
+    ollama: "Ollama",
+    aistudio: "Google AI Studio",
+    groq: "Groq",
+    cerebras: "Cerebras",
+    cloudflare: "Cloudflare Workers AI",
+  };
+  return map[id] ?? id;
+}
 
 const PROVIDERS: { id: ProviderFilter; label: string; dot: string }[] = [
   { id: "all", label: "All", dot: "var(--color-fg-muted)" },
@@ -31,7 +44,11 @@ export function ProviderChips() {
                 : "bg-(--color-surface-1) text-(--color-fg-muted) border-(--color-border) hover:bg-(--color-surface-2)",
             )}
           >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.dot }} />
+            {p.id === "all" ? (
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.dot }} />
+            ) : (
+              <ProviderAvatar provider={providerNameForId(p.id)} size="xs" />
+            )}
             {p.label}
           </button>
         );

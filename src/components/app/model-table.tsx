@@ -1,6 +1,7 @@
 "use client";
-import { ChevronUp, ChevronDown, Brain, Wrench, MessageSquare, BookOpen, Lock, Ghost } from "lucide-react";
-import { useStore, type SortCol, type Filters } from "@/lib/store";
+import { ChevronUp, ChevronDown, Brain, Wrench, MessageSquare, BookOpen, Lock, Ghost, ChevronLeft, ChevronRight } from "lucide-react";
+import { ProviderAvatar } from "@/components/ui/provider-avatar";
+import { useStore, type SortCol, type Filters, type PageSize } from "@/lib/store";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,14 @@ export function applyFilters(models: ModelStats[], f: Filters): ModelStats[] {
   });
 }
 
+function sortValue(m: ModelStats, col: SortCol): number | string | null {
+  if (col === "is_free") return m.is_free ? 1 : 0;
+  if (col === "caps") return (m.brain ? 4 : 0) + (m.tools ? 2 : 0) + (m.open ? 1 : 0);
+  return m[col] as number | string | null;
+}
+
 export function ModelTable({ models, loading }: { models: ModelStats[]; loading: boolean }) {
-  const { sort, openDrawer, openChat, drawerModelId } = useStore();
+  const { sort, openDrawer, openChat, drawerModelId, page, pageSize, setPage, setPageSize } = useStore();
 
   if (loading) {
     return (
@@ -42,7 +49,7 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
   }
 
   const sorted = [...models].sort((a, b) => {
-    const av = a[sort.col]; const bv = b[sort.col];
+    const av = sortValue(a, sort.col); const bv = sortValue(b, sort.col);
     if (av == null && bv == null) return 0;
     if (av == null) return sort.desc ? 1 : -1;
     if (bv == null) return sort.desc ? -1 : 1;
@@ -62,6 +69,13 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
     );
   }
 
+  const total = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const end = Math.min(start + pageSize, total);
+  const pageRows = sorted.slice(start, end);
+
   return (
     <div className="rounded-lg border border-(--color-border) overflow-hidden bg-(--color-surface-1)">
       <Table>
@@ -69,8 +83,8 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
           <TR className="hover:bg-transparent">
             <TH className="w-12 text-right pr-4 font-mono text-[10px]">#</TH>
             <SortHead col="id" label="Model" />
-            <TH>Tier</TH>
-            <TH>Capabilities</TH>
+            <SortHead col="is_free" label="Tier" />
+            <SortHead col="caps" label="Capabilities" />
             <SortHead col="ctx" label="Context" align="right" />
             <SortHead col="tps" label="TPS" align="right" />
             <SortHead col="balanced" label="Score" align="right" highlighted />
@@ -78,7 +92,7 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
           </TR>
         </THead>
         <TBody>
-          {sorted.map((m, i) => (
+          {pageRows.map((m, i) => (
             <TR
               key={m.id}
               onClick={() => openDrawer(m.id)}
@@ -91,7 +105,7 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
                 drawerModelId === m.id && "bg-(--color-accent-soft) border-l-2 border-l-(--color-accent)"
               )}
             >
-              <TD className="text-right pr-4 font-mono text-[11px] text-(--color-fg-subtle)">{i + 1}</TD>
+              <TD className="text-right pr-4 font-mono text-[11px] text-(--color-fg-subtle)">{start + i + 1}</TD>
               <TD>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-md bg-(--color-surface-2) border border-(--color-border) flex items-center justify-center text-[10px] font-mono font-semibold text-(--color-fg-muted)">
@@ -99,8 +113,8 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
                   </div>
                   <div className="min-w-0">
                     <div className="text-[13px] font-medium truncate">{m.id}</div>
-                    <div className="text-[11px] text-(--color-fg-subtle) flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-(--color-fg-subtle)" />
+                    <div className="text-[11px] text-(--color-fg-subtle) flex items-center gap-1.5">
+                      <ProviderAvatar provider={m.provider} size="xs" />
                       {m.provider}
                     </div>
                   </div>
@@ -130,6 +144,62 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
           ))}
         </TBody>
       </Table>
+
+      <Pagination
+        start={start}
+        end={end}
+        total={total}
+        page={currentPage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        onPage={setPage}
+        onSize={setPageSize}
+      />
+    </div>
+  );
+}
+
+function Pagination({ start, end, total, page, totalPages, pageSize, onPage, onSize }: {
+  start: number; end: number; total: number; page: number; totalPages: number; pageSize: PageSize;
+  onPage: (p: number) => void; onSize: (s: PageSize) => void;
+}) {
+  return (
+    <div className="h-12 px-4 border-t border-(--color-border) flex items-center justify-between gap-4 bg-(--color-bg)">
+      <div className="text-[11px] font-mono text-(--color-fg-subtle) tabular-nums">
+        {start + 1}-{end} of {total}
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-(--color-fg-subtle)">Rows</span>
+          {([50, 100, 200] as PageSize[]).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onSize(s)}
+              className={cn(
+                "h-6 px-2 rounded text-[11px] font-mono cursor-pointer transition-colors duration-[120ms]",
+                pageSize === s
+                  ? "bg-(--color-accent-soft) text-(--color-accent)"
+                  : "text-(--color-fg-muted) hover:bg-(--color-surface-2)",
+              )}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="h-4 w-px bg-(--color-border)" />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => onPage(page - 1)} disabled={page <= 1} aria-label="Previous page">
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </Button>
+          <span className="text-[11px] font-mono tabular-nums text-(--color-fg-muted) min-w-[60px] text-center">
+            {page} / {totalPages}
+          </span>
+          <Button variant="ghost" size="icon" onClick={() => onPage(page + 1)} disabled={page >= totalPages} aria-label="Next page">
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
