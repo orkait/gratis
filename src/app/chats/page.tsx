@@ -82,7 +82,7 @@ function formatBytes(n: number): string {
 
 export default function ChatsPage() {
   const router = useRouter();
-  const { openThreadById } = useStore();
+  const { openThread } = useStore();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -122,7 +122,7 @@ export default function ChatsPage() {
   };
 
   const resume = (t: ChatThread) => {
-    openThreadById(t.id, t.modelId);
+    openThread(t.id, t.modelId);
     router.push("/");
   };
 

@@ -1,0 +1,19 @@
+[project]
+name = "zerocostllm-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "litellm>=1.72",
+    "httpx>=0.28",
+    "python-dotenv>=1.1",
+    "pydantic>=2.11",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

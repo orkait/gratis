@@ -12,10 +12,11 @@ type State = {
 type Patch = { messages?: ChatMessage[]; tokenUsage?: number | null };
 
 export function useChatThread(modelId: string, threadId: string | null, onThreadCreated: (id: string) => void) {
-  const [state, setState] = useState<State>({ thread: null, loading: true });
+  const [state, setState] = useState<State>({ thread: null, loading: !!threadId });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPatch = useRef<Patch | null>(null);
   const currentIdRef = useRef<string | null>(null);
+  const creatingRef = useRef<Promise<ChatThread> | null>(null);
 
   const flushNow = async () => {
     const id = currentIdRef.current;
@@ -36,24 +37,28 @@ export function useChatThread(modelId: string, threadId: string | null, onThread
 
   useEffect(() => {
     let cancelled = false;
-    setState({ thread: null, loading: true });
+    currentIdRef.current = null;
+    creatingRef.current = null;
 
+    if (!threadId) {
+      setState({ thread: null, loading: false });
+      return () => {
+        cancelled = true;
+        void flushNow();
+      };
+    }
+
+    setState({ thread: null, loading: true });
     (async () => {
       try {
-        if (threadId) {
-          const t = await getThread(threadId);
-          if (cancelled) return;
-          if (t && t.modelId === modelId) {
-            currentIdRef.current = t.id;
-            setState({ thread: t, loading: false });
-            return;
-          }
-        }
-        const t = await createThread(modelId);
+        const t = await getThread(threadId);
         if (cancelled) return;
-        currentIdRef.current = t.id;
-        setState({ thread: t, loading: false });
-        onThreadCreated(t.id);
+        if (t && t.modelId === modelId) {
+          currentIdRef.current = t.id;
+          setState({ thread: t, loading: false });
+        } else {
+          setState({ thread: null, loading: false });
+        }
       } catch (err) {
         console.error("chat-thread load error", err);
         if (!cancelled) setState({ thread: null, loading: false });
@@ -64,16 +69,13 @@ export function useChatThread(modelId: string, threadId: string | null, onThread
       cancelled = true;
       void flushNow();
     };
-  }, [modelId, threadId, onThreadCreated]);
+  }, [modelId, threadId]);
 
   useEffect(() => {
     const onBeforeUnload = () => {
       const id = currentIdRef.current;
       const patch = pendingPatch.current;
       if (!id || !patch) return;
-      try {
-        navigator.sendBeacon?.("/_noop", new Blob([], { type: "text/plain" }));
-      } catch {}
       void updateThread(id, patch);
       pendingPatch.current = null;
     };
@@ -81,18 +83,37 @@ export function useChatThread(modelId: string, threadId: string | null, onThread
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, []);
 
+  const ensureThread = async (): Promise<ChatThread> => {
+    if (currentIdRef.current && state.thread) return state.thread;
+    if (creatingRef.current) return creatingRef.current;
+    const p = createThread(modelId).then((t) => {
+      currentIdRef.current = t.id;
+      setState({ thread: t, loading: false });
+      onThreadCreated(t.id);
+      return t;
+    });
+    creatingRef.current = p;
+    try {
+      return await p;
+    } finally {
+      creatingRef.current = null;
+    }
+  };
+
   const queueSave = (patch: Patch) => {
     pendingPatch.current = { ...pendingPatch.current, ...patch };
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => { void flushNow(); }, SAVE_DEBOUNCE_MS);
   };
 
-  const setMessages = (messages: ChatMessage[]) => {
+  const setMessages = async (messages: ChatMessage[]) => {
+    await ensureThread();
     setState((s) => (s.thread ? { thread: { ...s.thread, messages }, loading: false } : s));
     queueSave({ messages });
   };
 
   const setTokenUsage = (tokens: number | null) => {
+    if (!currentIdRef.current) return;
     setState((s) => (s.thread ? { thread: { ...s.thread, tokenUsage: tokens }, loading: false } : s));
     queueSave({ tokenUsage: tokens });
   };

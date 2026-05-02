@@ -37,7 +37,7 @@ const BUCKET_LABEL: Record<string, string> = {
 };
 
 export function ChatSidebar({ refreshKey }: { refreshKey: number }) {
-  const { currentThreadId, openThreadById, startNewChat } = useStore();
+  const { currentThreadId, openThread, startNewChat, setCurrentThreadId } = useStore();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [query, setQuery] = useState("");
 
@@ -67,8 +67,8 @@ export function ChatSidebar({ refreshKey }: { refreshKey: number }) {
     e.preventDefault();
     if (!confirm("Delete this chat?")) return;
     await deleteThread(id);
-    if (currentThreadId === id) startNewChat();
     setThreads((prev) => prev.filter((t) => t.id !== id));
+    if (currentThreadId === id) setCurrentThreadId(null);
   };
 
   return (
@@ -106,7 +106,7 @@ export function ChatSidebar({ refreshKey }: { refreshKey: number }) {
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => openThreadById(t.id, t.modelId)}
+                      onClick={() => openThread(t.id, t.modelId)}
                       className={cn(
                         "group w-full px-2 h-9 rounded-md flex items-center gap-2 text-left cursor-pointer transition-colors duration-[120ms]",
                         active ? "bg-(--color-accent-soft) text-(--color-fg)" : "text-(--color-fg-muted) hover:bg-(--color-surface-1) hover:text-(--color-fg)",

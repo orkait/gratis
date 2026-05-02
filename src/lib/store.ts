@@ -17,7 +17,15 @@ export type Filters = {
   provider: ProviderFilter;
 };
 
+const DEFAULT_FILTERS: Filters = {
+  freeOnly: false, openOnly: false, brain: false, tools: false,
+  minParams: 0, minCtx: 0, search: "", provider: "all",
+};
+
+const FALLBACK_MODEL = "zero-cost-intelligent";
+
 type State = {
+  // model market
   filters: Filters;
   setFilter: <K extends keyof Filters>(k: K, v: Filters[K]) => void;
   resetFilters: () => void;
@@ -27,28 +35,32 @@ type State = {
   pageSize: PageSize;
   setPage: (p: number) => void;
   setPageSize: (s: PageSize) => void;
+
+  // overlays
   drawerModelId: string | null;
   openDrawer: (id: string) => void;
   closeDrawer: () => void;
   cmdkOpen: boolean;
   setCmdk: (v: boolean) => void;
+
+  // chat
   chatModelId: string | null;
-  openChat: (id: string) => void;
-  closeChat: () => void;
   currentThreadId: string | null;
-  setCurrentThreadId: (id: string | null) => void;
-  openThreadById: (threadId: string, modelId: string) => void;
-  startNewChat: (modelId?: string) => void;
   lastChatModelId: string | null;
+  /** Open existing thread - sets both id + model atomically. */
+  openThread: (threadId: string, modelId: string) => void;
+  /** Internal: set thread id after lazy creation. Does NOT touch chatModelId. */
+  setCurrentThreadId: (id: string | null) => void;
+  /** Start new chat: clear currentThreadId, set model. Empty thread is NOT created until first message. */
+  startNewChat: (modelId?: string) => void;
+  /** Change model for current empty chat. If thread has messages, this is a no-op. Caller should startNewChat instead. */
+  setChatModel: (modelId: string) => void;
+
+  // theme + layout
   theme: "dark" | "light";
   toggleTheme: () => void;
   sidebarWidth: number;
   setSidebarWidth: (w: number) => void;
-};
-
-const DEFAULT_FILTERS: Filters = {
-  freeOnly: false, openOnly: false, brain: false, tools: false,
-  minParams: 0, minCtx: 0, search: "", provider: "all",
 };
 
 export const useStore = create<State>()(
@@ -66,22 +78,28 @@ export const useStore = create<State>()(
       pageSize: 50,
       setPage: (p) => set({ page: Math.max(1, p) }),
       setPageSize: (s) => set({ pageSize: s, page: 1 }),
+
       drawerModelId: null,
       openDrawer: (id) => set({ drawerModelId: id }),
       closeDrawer: () => set({ drawerModelId: null }),
       cmdkOpen: false,
       setCmdk: (v) => set({ cmdkOpen: v }),
+
       chatModelId: null,
-      openChat: (id) => set({ chatModelId: id, lastChatModelId: id }),
-      closeChat: () => set({ chatModelId: null, currentThreadId: null }),
       currentThreadId: null,
+      lastChatModelId: null,
+      openThread: (threadId, modelId) => set({
+        currentThreadId: threadId,
+        chatModelId: modelId,
+        lastChatModelId: modelId,
+      }),
       setCurrentThreadId: (id) => set({ currentThreadId: id }),
-      openThreadById: (threadId, modelId) => set({ currentThreadId: threadId, chatModelId: modelId, lastChatModelId: modelId }),
       startNewChat: (modelId) => set((s) => {
-        const m = modelId ?? s.lastChatModelId ?? "zero-cost-intelligent";
+        const m = modelId ?? s.chatModelId ?? s.lastChatModelId ?? FALLBACK_MODEL;
         return { currentThreadId: null, chatModelId: m, lastChatModelId: m };
       }),
-      lastChatModelId: null,
+      setChatModel: (modelId) => set({ chatModelId: modelId, lastChatModelId: modelId }),
+
       theme: "dark",
       toggleTheme: () => set((s) => {
         const next = s.theme === "dark" ? "light" : "dark";
@@ -95,7 +113,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "zerocostllm-store",
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => {
         if (typeof window !== "undefined") return localStorage;
         const noop: Storage = {

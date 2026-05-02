@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useSWR from "swr";
 import axios from "axios";
 import { useStore } from "@/lib/store";
@@ -14,12 +14,12 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 const fetcher = async (url: string) => (await axios.get<ModelStats[]>(url)).data;
 
 export default function Page() {
-  const { setCmdk, cmdkOpen, startNewChat, currentThreadId, chatModelId, closeChat } = useStore();
+  const { setCmdk, cmdkOpen, startNewChat } = useStore();
   const { data: models = [] } = useSWR(`${API_BASE}/v1/rankings`, fetcher, { revalidateOnFocus: false });
   const [helpOpen, setHelpOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => { setRefreshKey((k) => k + 1); }, [currentThreadId, chatModelId]);
+  const refreshThreads = () => setRefreshKey((k) => k + 1);
 
   useGlobalHotkeys({
     "cmdk.toggle": () => setCmdk(!cmdkOpen),
@@ -31,7 +31,6 @@ export default function Page() {
     "overlay.close": () => {
       if (cmdkOpen) setCmdk(false);
       else if (helpOpen) setHelpOpen(false);
-      else if (chatModelId) closeChat();
     },
     "help.toggle": () => setHelpOpen((v) => !v),
   });
@@ -39,7 +38,7 @@ export default function Page() {
   return (
     <div className="flex min-h-dvh bg-(--color-bg) text-(--color-fg)">
       <ChatSidebar refreshKey={refreshKey} />
-      <ChatView models={models} onThreadChange={() => setRefreshKey((k) => k + 1)} />
+      <ChatView models={models} onThreadChange={refreshThreads} />
       <CommandPalette models={models} />
       <HelpSheet open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>

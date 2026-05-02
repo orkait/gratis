@@ -78,7 +78,7 @@ function ChatActiveView({
     if (!content || loading) return;
     const next: ChatMessage = { role: "user", content };
     const withUser = [...messages, next];
-    setMessages(withUser);
+    await setMessages(withUser);
     setInput("");
     setLoading(true);
     try {
@@ -87,7 +87,7 @@ function ChatActiveView({
         messages: withUser,
       });
       const assistant: ChatMessage = { role: "assistant", content: r.data.choices[0].message.content };
-      setMessages([...withUser, assistant]);
+      await setMessages([...withUser, assistant]);
       const usage = r.data.usage;
       const used = usage?.prompt_tokens ?? usage?.total_tokens ?? null;
       if (typeof used === "number") setTokenUsage(used);
@@ -98,7 +98,7 @@ function ChatActiveView({
         detail = typeof apiErr === "string" ? apiErr : (apiErr?.message ?? err.message);
         if (err.response?.status) detail = `${err.response.status} ${detail}`;
       } else if (err instanceof Error) detail = err.message;
-      setMessages([...withUser, { role: "assistant", content: `**Error:** ${detail}` }]);
+      await setMessages([...withUser, { role: "assistant", content: `**Error:** ${detail}` }]);
     } finally {
       setLoading(false);
     }

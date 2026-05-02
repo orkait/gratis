@@ -10,7 +10,7 @@ import type { ModelStats } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 export function CommandPalette({ models }: { models: ModelStats[] }) {
-  const { cmdkOpen, setCmdk, openDrawer, setFilter, resetFilters, closeDrawer, openThreadById, startNewChat } = useStore();
+  const { cmdkOpen, setCmdk, openDrawer, setFilter, resetFilters, closeDrawer, openThread, startNewChat } = useStore();
   const router = useRouter();
   const cls = commandClasses();
   const [recent, setRecent] = useState<ChatThread[]>([]);
@@ -53,7 +53,7 @@ export function CommandPalette({ models }: { models: ModelStats[] }) {
                     key={t.id}
                     className={cls.item}
                     value={`recent ${t.title} ${t.modelId}`}
-                    onSelect={() => { closeDrawer(); openThreadById(t.id, t.modelId); setCmdk(false); }}
+                    onSelect={() => { closeDrawer(); openThread(t.id, t.modelId); setCmdk(false); }}
                   >
                     <History className="w-3.5 h-3.5" />
                     <span className="flex-1 truncate">{t.title}</span>
