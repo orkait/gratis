@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@theme {
+  /* ============ COLORS (OKLCH only) ============ */
+  --color-bg: oklch(0.115 0.008 260);
+  --color-fg: oklch(0.95 0.005 260);
+  --color-fg-muted: oklch(0.72 0.006 260);
+  --color-fg-subtle: oklch(0.50 0.008 260);
+  --color-fg-disabled: oklch(0.36 0.008 260);
+  --color-surface-1: oklch(0.155 0.008 260);
+  --color-surface-2: oklch(0.190 0.008 260);
+  --color-surface-3: oklch(0.230 0.008 260);
+  --color-border: oklch(1 0 0 / 0.08);
+  --color-border-strong: oklch(1 0 0 / 0.14);
+
+  --color-accent: oklch(0.60 0.165 265);
+  --color-accent-fg: oklch(0.99 0 0);
+  --color-accent-soft: oklch(0.60 0.165 265 / 0.12);
+
+  --color-success: oklch(0.65 0.15 145);
+  --color-success-soft: oklch(0.65 0.15 145 / 0.14);
+  --color-warning: oklch(0.78 0.16 75);
+  --color-warning-soft: oklch(0.78 0.16 75 / 0.14);
+  --color-danger: oklch(0.62 0.20 25);
+  --color-danger-soft: oklch(0.62 0.20 25 / 0.14);
+  --color-info: oklch(0.68 0.13 230);
+  --color-info-soft: oklch(0.68 0.13 230 / 0.14);
+
+  --color-provider-openrouter: oklch(0.68 0.18 35);
+  --color-provider-ollama: oklch(0.62 0.16 200);
+  --color-provider-aistudio: oklch(0.70 0.15 90);
+  --color-provider-groq: oklch(0.65 0.20 25);
+  --color-provider-cerebras: oklch(0.60 0.16 290);
+  --color-provider-cloudflare: oklch(0.72 0.18 60);
+
+  /* ============ TYPOGRAPHY ============ */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --text-display: 28px;
+  --text-display--line-height: 1.1;
+  --text-h1: 22px;
+  --text-h1--line-height: 1.2;
+  --text-h2: 18px;
+  --text-h2--line-height: 1.25;
+  --text-h3: 15px;
+  --text-h3--line-height: 1.3;
+  --text-body: 14px;
+  --text-body--line-height: 1.5;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 1.45;
+  --text-caption: 11px;
+  --text-caption--line-height: 1.35;
+
+  /* ============ RADIUS ============ */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+
+  /* ============ MOTION ============ */
+  --animate-shimmer: shimmer 1.4s linear infinite;
+}
+
+/* light-mode override (data-theme=light on <html>) */
+:root[data-theme="light"] {
+  --color-bg: oklch(0.99 0.003 260);
+  --color-fg: oklch(0.13 0.005 260);
+  --color-fg-muted: oklch(0.40 0.007 260);
+  --color-fg-subtle: oklch(0.55 0.008 260);
+  --color-fg-disabled: oklch(0.70 0.008 260);
+  --color-surface-1: oklch(0.97 0.005 260);
+  --color-surface-2: oklch(0.94 0.006 260);
+  --color-surface-3: oklch(0.91 0.007 260);
+  --color-border: oklch(0 0 0 / 0.08);
+  --color-border-strong: oklch(0 0 0 / 0.14);
+}
+
+@layer base {
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* Mandatory reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Focus rings -- every interactive element */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
