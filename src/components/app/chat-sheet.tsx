@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetBody } from "@/components/ui/she
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { ChatMarkdown } from "./chat-markdown";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 type Msg = { role: "user" | "assistant"; content: string };
@@ -82,9 +83,13 @@ function ChatPanel({ modelId, onClose }: { modelId: string; onClose: () => void 
                 {m.role === "user" ? <User className="w-3 h-3 text-(--color-accent-fg)" /> : <Bot className="w-3 h-3 text-(--color-fg-muted)" />}
               </div>
               <div className={cn(
-                "max-w-[80%] rounded-lg px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap",
-                m.role === "user" ? "bg-(--color-accent-soft) text-(--color-fg)" : "bg-(--color-surface-2) text-(--color-fg)",
-              )}>{m.content}</div>
+                "max-w-[80%] rounded-lg px-3 py-2 text-[13px] leading-relaxed",
+                m.role === "user"
+                  ? "bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap"
+                  : "bg-(--color-surface-2) text-(--color-fg)",
+              )}>
+                {m.role === "user" ? m.content : <ChatMarkdown content={m.content} />}
+              </div>
             </div>
           ))}
           {loading && (
