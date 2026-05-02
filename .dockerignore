@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.env*
+backend
+dev.py
+*.md
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
