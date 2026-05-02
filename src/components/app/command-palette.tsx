@@ -1,5 +1,4 @@
 "use client";
-import { useEffect } from "react";
 import { MessageSquare, Eye, Filter } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -10,17 +9,6 @@ import type { ModelStats } from "@/lib/types";
 export function CommandPalette({ models }: { models: ModelStats[] }) {
   const { cmdkOpen, setCmdk, openDrawer, openChat, setFilter, resetFilters, closeDrawer } = useStore();
   const cls = commandClasses();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setCmdk(!cmdkOpen);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [cmdkOpen, setCmdk]);
 
   return (
     <Dialog open={cmdkOpen} onOpenChange={(open) => setCmdk(open)}>

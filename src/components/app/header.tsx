@@ -1,10 +1,11 @@
 "use client";
-import { Search } from "lucide-react";
+import { Search, HelpCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Kbd } from "@/components/ui/kbd";
+import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./theme-toggle";
 
-export function Header({ count }: { count: number }) {
+export function Header({ count, onHelpClick }: { count: number; onHelpClick: () => void }) {
   const { setCmdk } = useStore();
   return (
     <header className="h-12 sticky top-0 z-[1020] bg-(--color-bg)/80 backdrop-blur-md border-b border-(--color-border) flex items-center px-4 gap-4">
@@ -31,6 +32,9 @@ export function Header({ count }: { count: number }) {
           </span>
           <span className="text-[10px] font-mono text-(--color-fg-muted)">live</span>
         </div>
+        <Button variant="ghost" size="icon" onClick={onHelpClick} aria-label="Keyboard shortcuts">
+          <HelpCircle className="w-3.5 h-3.5" />
+        </Button>
         <ThemeToggle />
       </div>
     </header>
