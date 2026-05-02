@@ -1,5 +1,6 @@
 "use client";
-import { Zap, Brain, Wrench, Search, RotateCcw } from "lucide-react";
+import { Zap, Brain, Wrench, Search, RotateCcw, Archive } from "lucide-react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,13 @@ export function Sidebar() {
       </div>
 
       <Separator />
-      <div className="p-3">
+      <div className="p-3 space-y-1">
+        <Link
+          href="/chats"
+          className="h-8 px-3 rounded-md flex items-center gap-2 text-[13px] text-(--color-fg-muted) hover:bg-(--color-surface-1) hover:text-(--color-fg) transition-colors duration-[120ms] cursor-pointer"
+        >
+          <Archive className="w-3.5 h-3.5" /> Chat archive
+        </Link>
         <Button variant="ghost" size="sm" onClick={resetFilters} className="w-full justify-start">
           <RotateCcw className="w-3.5 h-3.5" /> Reset filters
         </Button>

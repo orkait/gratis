@@ -1,14 +1,26 @@
 "use client";
-import { MessageSquare, Eye, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageSquare, Eye, Filter, History, Archive } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { listThreads, type ChatThread } from "@/lib/chat-db";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Command, CommandInput, CommandList, CommandItem, CommandGroup, CommandEmpty, commandClasses } from "@/components/ui/command";
 import { Kbd } from "@/components/ui/kbd";
 import type { ModelStats } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 export function CommandPalette({ models }: { models: ModelStats[] }) {
-  const { cmdkOpen, setCmdk, openDrawer, openChat, setFilter, resetFilters, closeDrawer } = useStore();
+  const { cmdkOpen, setCmdk, openDrawer, openChat, setFilter, resetFilters, closeDrawer, openThreadById } = useStore();
+  const router = useRouter();
   const cls = commandClasses();
+  const [recent, setRecent] = useState<ChatThread[]>([]);
+
+  useEffect(() => {
+    if (!cmdkOpen) return;
+    let cancelled = false;
+    void listThreads().then((all) => { if (!cancelled) setRecent(all.slice(0, 8)); });
+    return () => { cancelled = true; };
+  }, [cmdkOpen]);
 
   return (
     <Dialog open={cmdkOpen} onOpenChange={(open) => setCmdk(open)}>
@@ -26,6 +38,30 @@ export function CommandPalette({ models }: { models: ModelStats[] }) {
                 <Filter className="w-3.5 h-3.5" /> Show free models only
               </CommandItem>
             </CommandGroup>
+
+            <CommandGroup heading="Navigation" className={cls.group}>
+              <CommandItem className={cls.item} value="archive" onSelect={() => { setCmdk(false); router.push("/chats"); }}>
+                <Archive className="w-3.5 h-3.5" />
+                <span className="flex-1">Open chat archive</span>
+              </CommandItem>
+            </CommandGroup>
+
+            {recent.length > 0 && (
+              <CommandGroup heading="Recent chats" className={cls.group}>
+                {recent.map((t) => (
+                  <CommandItem
+                    key={t.id}
+                    className={cls.item}
+                    value={`recent ${t.title} ${t.modelId}`}
+                    onSelect={() => { closeDrawer(); openThreadById(t.id, t.modelId); setCmdk(false); }}
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span className="flex-1 truncate">{t.title}</span>
+                    <span className="text-[10px] font-mono text-(--color-fg-subtle) truncate max-w-[140px]">{t.modelId}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
 
             <CommandGroup heading="Models" className={cls.group}>
               {models.slice(0, 30).map((m) => (
