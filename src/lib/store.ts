@@ -38,6 +38,8 @@ type State = {
   currentThreadId: string | null;
   setCurrentThreadId: (id: string | null) => void;
   openThreadById: (threadId: string, modelId: string) => void;
+  startNewChat: (modelId?: string) => void;
+  lastChatModelId: string | null;
   theme: "dark" | "light";
   toggleTheme: () => void;
   sidebarWidth: number;
@@ -70,11 +72,16 @@ export const useStore = create<State>()(
       cmdkOpen: false,
       setCmdk: (v) => set({ cmdkOpen: v }),
       chatModelId: null,
-      openChat: (id) => set({ chatModelId: id }),
+      openChat: (id) => set({ chatModelId: id, lastChatModelId: id }),
       closeChat: () => set({ chatModelId: null, currentThreadId: null }),
       currentThreadId: null,
       setCurrentThreadId: (id) => set({ currentThreadId: id }),
-      openThreadById: (threadId, modelId) => set({ currentThreadId: threadId, chatModelId: modelId }),
+      openThreadById: (threadId, modelId) => set({ currentThreadId: threadId, chatModelId: modelId, lastChatModelId: modelId }),
+      startNewChat: (modelId) => set((s) => {
+        const m = modelId ?? s.lastChatModelId ?? "zero-cost-intelligent";
+        return { currentThreadId: null, chatModelId: m, lastChatModelId: m };
+      }),
+      lastChatModelId: null,
       theme: "dark",
       toggleTheme: () => set((s) => {
         const next = s.theme === "dark" ? "light" : "dark";
@@ -107,6 +114,9 @@ export const useStore = create<State>()(
         pageSize: s.pageSize,
         theme: s.theme,
         sidebarWidth: s.sidebarWidth,
+        currentThreadId: s.currentThreadId,
+        chatModelId: s.chatModelId,
+        lastChatModelId: s.lastChatModelId,
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.theme === "light" && typeof document !== "undefined") {

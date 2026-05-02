@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { X, Copy, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { ProviderAvatar } from "@/components/ui/provider-avatar";
 import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,7 +13,8 @@ import type { ModelStats } from "@/lib/types";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export function DetailDrawer({ models }: { models: ModelStats[] }) {
-  const { drawerModelId, closeDrawer, openChat } = useStore();
+  const { drawerModelId, closeDrawer, startNewChat } = useStore();
+  const router = useRouter();
   const open = drawerModelId !== null;
   const model = models.find((m) => m.id === drawerModelId);
 
@@ -83,7 +85,7 @@ print(r.choices[0].message.content)`} />
 
         <SheetFooter>
           <Button variant="outline" onClick={closeDrawer}>Close</Button>
-          <Button onClick={() => { openChat(model.id); closeDrawer(); }}>
+          <Button onClick={() => { startNewChat(model.id); closeDrawer(); router.push("/"); }}>
             <ExternalLink className="w-3.5 h-3.5" /> Open in chat
           </Button>
         </SheetFooter>

@@ -1,5 +1,6 @@
 "use client";
 import { ChevronUp, ChevronDown, Brain, Wrench, MessageSquare, BookOpen, Lock, Ghost, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { ProviderAvatar } from "@/components/ui/provider-avatar";
 import { useStore, type SortCol, type Filters, type PageSize } from "@/lib/store";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -38,7 +39,8 @@ function sortValue(m: ModelStats, col: SortCol): number | string | null {
 }
 
 export function ModelTable({ models, loading }: { models: ModelStats[]; loading: boolean }) {
-  const { sort, openDrawer, openChat, drawerModelId, page, pageSize, setPage, setPageSize } = useStore();
+  const { sort, openDrawer, drawerModelId, page, pageSize, setPage, setPageSize, startNewChat } = useStore();
+  const router = useRouter();
 
   if (loading) {
     return (
@@ -136,7 +138,7 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
               </TD>
               <TD className="text-right font-mono text-[13px] font-semibold tabular-nums text-(--color-accent)">{m.balanced.toFixed(1)}</TD>
               <TD className="text-center">
-                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openChat(m.id); }} aria-label="Open chat">
+                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); startNewChat(m.id); router.push("/"); }} aria-label="Open chat">
                   <MessageSquare className="w-3.5 h-3.5" />
                 </Button>
               </TD>

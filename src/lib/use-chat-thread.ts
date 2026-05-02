@@ -9,11 +9,30 @@ type State = {
   loading: boolean;
 };
 
+type Patch = { messages?: ChatMessage[]; tokenUsage?: number | null };
+
 export function useChatThread(modelId: string, threadId: string | null, onThreadCreated: (id: string) => void) {
   const [state, setState] = useState<State>({ thread: null, loading: true });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingPatch = useRef<{ messages?: ChatMessage[]; tokenUsage?: number | null } | null>(null);
+  const pendingPatch = useRef<Patch | null>(null);
   const currentIdRef = useRef<string | null>(null);
+
+  const flushNow = async () => {
+    const id = currentIdRef.current;
+    const patch = pendingPatch.current;
+    if (!id || !patch) return;
+    pendingPatch.current = null;
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    try {
+      const next = await updateThread(id, patch);
+      if (next) setState((s) => ({ ...s, thread: next }));
+    } catch (err) {
+      console.error("chat-thread save error", err);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -43,26 +62,29 @@ export function useChatThread(modelId: string, threadId: string | null, onThread
 
     return () => {
       cancelled = true;
-      if (saveTimer.current) clearTimeout(saveTimer.current);
+      void flushNow();
     };
   }, [modelId, threadId, onThreadCreated]);
 
-  const flush = async () => {
-    if (!currentIdRef.current || !pendingPatch.current) return;
-    const patch = pendingPatch.current;
-    pendingPatch.current = null;
-    try {
-      const next = await updateThread(currentIdRef.current, patch);
-      if (next) setState((s) => ({ ...s, thread: next }));
-    } catch (err) {
-      console.error("chat-thread save error", err);
-    }
-  };
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      const id = currentIdRef.current;
+      const patch = pendingPatch.current;
+      if (!id || !patch) return;
+      try {
+        navigator.sendBeacon?.("/_noop", new Blob([], { type: "text/plain" }));
+      } catch {}
+      void updateThread(id, patch);
+      pendingPatch.current = null;
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
 
-  const queueSave = (patch: { messages?: ChatMessage[]; tokenUsage?: number | null }) => {
+  const queueSave = (patch: Patch) => {
     pendingPatch.current = { ...pendingPatch.current, ...patch };
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => { void flush(); }, SAVE_DEBOUNCE_MS);
+    saveTimer.current = setTimeout(() => { void flushNow(); }, SAVE_DEBOUNCE_MS);
   };
 
   const setMessages = (messages: ChatMessage[]) => {

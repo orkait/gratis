@@ -10,7 +10,7 @@ import type { ModelStats } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 export function CommandPalette({ models }: { models: ModelStats[] }) {
-  const { cmdkOpen, setCmdk, openDrawer, openChat, setFilter, resetFilters, closeDrawer, openThreadById } = useStore();
+  const { cmdkOpen, setCmdk, openDrawer, setFilter, resetFilters, closeDrawer, openThreadById, startNewChat } = useStore();
   const router = useRouter();
   const cls = commandClasses();
   const [recent, setRecent] = useState<ChatThread[]>([]);
@@ -75,7 +75,7 @@ export function CommandPalette({ models }: { models: ModelStats[] }) {
 
             <CommandGroup heading="Chat with..." className={cls.group}>
               {models.slice(0, 10).map((m) => (
-                <CommandItem key={`chat-${m.id}`} className={cls.item} value={`chat ${m.id}`} onSelect={() => { closeDrawer(); openChat(m.id); setCmdk(false); }}>
+                <CommandItem key={`chat-${m.id}`} className={cls.item} value={`chat ${m.id}`} onSelect={() => { closeDrawer(); startNewChat(m.id); setCmdk(false); router.push("/"); }}>
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span className="flex-1 truncate">{m.id}</span>
                 </CommandItem>
