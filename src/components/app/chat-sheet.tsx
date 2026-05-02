@@ -7,28 +7,32 @@ import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ChatMarkdown } from "./chat-markdown";
+import type { ModelStats } from "@/lib/types";
+import { ContextMeter } from "./context-meter";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 type Msg = { role: "user" | "assistant"; content: string };
 
-export function ChatSheet() {
+export function ChatSheet({ models }: { models: ModelStats[] }) {
   const { chatModelId, closeChat } = useStore();
   if (!chatModelId) return null;
+  const modelCtx = models.find((m) => m.id === chatModelId)?.ctx ?? null;
   return (
     <Sheet open={!!chatModelId} onOpenChange={(open: boolean) => !open && closeChat()}>
       <SheetContent className="max-w-[560px]">
-        <ChatPanel key={chatModelId} modelId={chatModelId} onClose={closeChat} />
+        <ChatPanel key={chatModelId} modelId={chatModelId} modelCtx={modelCtx} onClose={closeChat} />
       </SheetContent>
     </Sheet>
   );
 }
 
-function ChatPanel({ modelId, onClose }: { modelId: string; onClose: () => void }) {
+function ChatPanel({ modelId, modelCtx, onClose }: { modelId: string; modelCtx: number | null; onClose: () => void }) {
   const [messages, setMessages] = useState<Msg[]>(() => [
     { role: "assistant", content: `Connected to **${modelId}**. Send a message to begin.` },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lastTokens, setLastTokens] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,6 +51,9 @@ function ChatPanel({ modelId, onClose }: { modelId: string; onClose: () => void 
         messages: [...messages.filter((m, i) => !(m.role === "assistant" && i === 0)), next],
       });
       setMessages((p) => [...p, { role: "assistant", content: r.data.choices[0].message.content }]);
+      const usage = r.data.usage;
+      const used = usage?.prompt_tokens ?? usage?.total_tokens ?? null;
+      if (typeof used === "number") setLastTokens(used);
     } catch (err: unknown) {
       let detail = "Request failed.";
       if (axios.isAxiosError(err)) {
@@ -63,10 +70,11 @@ function ChatPanel({ modelId, onClose }: { modelId: string; onClose: () => void 
   return (
     <>
       <SheetHeader>
-        <div className="flex items-center gap-2 min-w-0">
-          <Bot className="w-4 h-4 text-(--color-accent)" />
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Bot className="w-4 h-4 text-(--color-accent) shrink-0" />
           <span className="text-[13px] font-mono truncate">{modelId}</span>
         </div>
+        <ContextMeter used={lastTokens} max={modelCtx} className="mr-2" />
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
           <X className="w-4 h-4" />
         </Button>

@@ -65,7 +65,7 @@ export default function Page() {
       </div>
       <DetailDrawer models={models} />
       <CommandPalette models={models} />
-      <ChatSheet />
+      <ChatSheet models={models} />
       <HelpSheet open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
