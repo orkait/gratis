@@ -31,7 +31,7 @@ export function applyFilters(models: ModelStats[], f: Filters): ModelStats[] {
 }
 
 export function ModelTable({ models, loading }: { models: ModelStats[]; loading: boolean }) {
-  const { sort, openDrawer, openChat } = useStore();
+  const { sort, openDrawer, openChat, drawerModelId } = useStore();
 
   if (loading) {
     return (
@@ -79,7 +79,18 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
         </THead>
         <TBody>
           {sorted.map((m, i) => (
-            <TR key={m.id} onClick={() => openDrawer(m.id)} className="cursor-pointer">
+            <TR
+              key={m.id}
+              onClick={() => openDrawer(m.id)}
+              role="button"
+              tabIndex={0}
+              aria-label={`View details for ${m.id}`}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrawer(m.id); } }}
+              className={cn(
+                "cursor-pointer",
+                drawerModelId === m.id && "bg-(--color-accent-soft) border-l-2 border-l-(--color-accent)"
+              )}
+            >
               <TD className="text-right pr-4 font-mono text-[11px] text-(--color-fg-subtle)">{i + 1}</TD>
               <TD>
                 <div className="flex items-center gap-3">

@@ -12,7 +12,7 @@ export function DialogContent({ className, children, ...props }: React.Component
       <Base.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed left-1/2 top-1/2 z-[1050] w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-(--color-surface-1) border border-(--color-border) shadow-[0_24px_64px_oklch(0.05_0.008_260/0.6)] data-[starting-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[ending-style]:scale-[0.97] transition-[opacity,transform] duration-[180ms] ease-out",
+          "fixed left-1/2 top-1/2 z-[1050] w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-(--color-surface-1) border border-(--color-border) data-[starting-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[ending-style]:scale-[0.97] transition-[opacity,transform] duration-[180ms] ease-out",
           className,
         )}
         {...props}

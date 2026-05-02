@@ -8,7 +8,7 @@ import { Kbd } from "@/components/ui/kbd";
 import type { ModelStats } from "@/lib/types";
 
 export function CommandPalette({ models }: { models: ModelStats[] }) {
-  const { cmdkOpen, setCmdk, openDrawer, openChat, setFilter, resetFilters } = useStore();
+  const { cmdkOpen, setCmdk, openDrawer, openChat, setFilter, resetFilters, closeDrawer } = useStore();
   const cls = commandClasses();
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export function CommandPalette({ models }: { models: ModelStats[] }) {
 
   return (
     <Dialog open={cmdkOpen} onOpenChange={(open) => setCmdk(open)}>
-      <DialogContent className="p-0 max-w-[640px]">
+      <DialogContent className="p-0 max-w-[640px] !z-[1090] [&~[data-slot='dialog-backdrop']]:!z-[1089]">
         <Command className={cls.root} loop>
           <CommandInput placeholder="Search models, providers, actions..." className={cls.input} />
           <CommandList className={cls.list}>
@@ -51,7 +51,7 @@ export function CommandPalette({ models }: { models: ModelStats[] }) {
 
             <CommandGroup heading="Chat with..." className={cls.group}>
               {models.slice(0, 10).map((m) => (
-                <CommandItem key={`chat-${m.id}`} className={cls.item} value={`chat ${m.id}`} onSelect={() => { openChat(m.id); setCmdk(false); }}>
+                <CommandItem key={`chat-${m.id}`} className={cls.item} value={`chat ${m.id}`} onSelect={() => { closeDrawer(); openChat(m.id); setCmdk(false); }}>
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span className="flex-1 truncate">{m.id}</span>
                 </CommandItem>

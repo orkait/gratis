@@ -106,7 +106,7 @@ function Slider({ label, value, max, step, suffix, onChange, display }: {
         <span className="text-(--color-fg-muted)">{label}</span>
         <span className="font-mono text-(--color-accent)">{shown}{suffix}</span>
       </div>
-      <input type="range" min={0} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full h-1 accent-(--color-accent) cursor-pointer" />
+      <input type="range" min={0} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} className="w-full h-1 accent-(--color-accent) cursor-pointer" />
     </div>
   );
 }
