@@ -9,31 +9,52 @@ import { cn } from "@/lib/utils";
 import { ChatMarkdown } from "./chat-markdown";
 import type { ModelStats } from "@/lib/types";
 import { ContextMeter } from "./context-meter";
+import { useChatThread } from "@/lib/use-chat-thread";
+import type { ChatMessage } from "@/lib/chat-db";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-type Msg = { role: "user" | "assistant"; content: string };
 
 export function ChatSheet({ models }: { models: ModelStats[] }) {
-  const { chatModelId, closeChat } = useStore();
+  const { chatModelId, closeChat, currentThreadId, setCurrentThreadId } = useStore();
   if (!chatModelId) return null;
   const modelCtx = models.find((m) => m.id === chatModelId)?.ctx ?? null;
+  const panelKey = currentThreadId ?? `new:${chatModelId}`;
   return (
     <Sheet open={!!chatModelId} onOpenChange={(open: boolean) => !open && closeChat()}>
       <SheetContent className="max-w-[560px]">
-        <ChatPanel key={chatModelId} modelId={chatModelId} modelCtx={modelCtx} onClose={closeChat} />
+        <ChatPanel
+          key={panelKey}
+          modelId={chatModelId}
+          threadId={currentThreadId}
+          modelCtx={modelCtx}
+          onClose={closeChat}
+          onThreadCreated={setCurrentThreadId}
+        />
       </SheetContent>
     </Sheet>
   );
 }
 
-function ChatPanel({ modelId, modelCtx, onClose }: { modelId: string; modelCtx: number | null; onClose: () => void }) {
-  const [messages, setMessages] = useState<Msg[]>(() => [
-    { role: "assistant", content: `Connected to **${modelId}**. Send a message to begin.` },
-  ]);
+function ChatPanel({
+  modelId,
+  threadId,
+  modelCtx,
+  onClose,
+  onThreadCreated,
+}: {
+  modelId: string;
+  threadId: string | null;
+  modelCtx: number | null;
+  onClose: () => void;
+  onThreadCreated: (id: string) => void;
+}) {
+  const { thread, loading: threadLoading, setMessages, setTokenUsage } = useChatThread(modelId, threadId, onThreadCreated);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [lastTokens, setLastTokens] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const messages: ChatMessage[] = thread?.messages ?? [];
+  const lastTokens = thread?.tokenUsage ?? null;
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -41,19 +62,21 @@ function ChatPanel({ modelId, modelCtx, onClose }: { modelId: string; modelCtx: 
 
   const send = async () => {
     if (!input.trim() || loading) return;
-    const next: Msg = { role: "user", content: input };
-    setMessages((p) => [...p, next]);
+    const next: ChatMessage = { role: "user", content: input };
+    const withUser = [...messages, next];
+    setMessages(withUser);
     setInput("");
     setLoading(true);
     try {
       const r = await axios.post(`${API_BASE}/v1/chat/completions`, {
         model: modelId,
-        messages: [...messages.filter((m, i) => !(m.role === "assistant" && i === 0)), next],
+        messages: withUser,
       });
-      setMessages((p) => [...p, { role: "assistant", content: r.data.choices[0].message.content }]);
+      const assistant: ChatMessage = { role: "assistant", content: r.data.choices[0].message.content };
+      setMessages([...withUser, assistant]);
       const usage = r.data.usage;
       const used = usage?.prompt_tokens ?? usage?.total_tokens ?? null;
-      if (typeof used === "number") setLastTokens(used);
+      if (typeof used === "number") setTokenUsage(used);
     } catch (err: unknown) {
       let detail = "Request failed.";
       if (axios.isAxiosError(err)) {
@@ -61,11 +84,13 @@ function ChatPanel({ modelId, modelCtx, onClose }: { modelId: string; modelCtx: 
         detail = typeof apiErr === "string" ? apiErr : (apiErr?.message ?? err.message);
         if (err.response?.status) detail = `${err.response.status} ${detail}`;
       } else if (err instanceof Error) detail = err.message;
-      setMessages((p) => [...p, { role: "assistant", content: `**Error:** ${detail}` }]);
+      setMessages([...withUser, { role: "assistant", content: `**Error:** ${detail}` }]);
     } finally {
       setLoading(false);
     }
   };
+
+  const showGreeting = messages.length === 0 && !threadLoading;
 
   return (
     <>
@@ -82,6 +107,11 @@ function ChatPanel({ modelId, modelCtx, onClose }: { modelId: string; modelCtx: 
 
       <SheetBody className="!p-0 flex flex-col">
         <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-3">
+          {showGreeting && (
+            <div className="text-[13px] text-(--color-fg-muted) bg-(--color-surface-2) rounded-lg px-3 py-2">
+              Connected to <span className="font-mono">{modelId}</span>. Send a message to begin.
+            </div>
+          )}
           {messages.map((m, i) => (
             <div key={i} className={cn("flex gap-2", m.role === "user" && "flex-row-reverse")}>
               <div className={cn(
@@ -116,13 +146,13 @@ function ChatPanel({ modelId, modelCtx, onClose }: { modelId: string; modelCtx: 
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
             placeholder="Type message... (Enter to send, Shift+Enter newline)"
             rows={1}
             className="flex-1 resize-none bg-(--color-surface-1) border border-(--color-border) rounded-md px-3 py-2 text-[13px] outline-none focus:border-(--color-accent) max-h-[120px]"
-            disabled={loading}
+            disabled={loading || threadLoading}
           />
-          <Button onClick={send} disabled={loading || !input.trim()} aria-label="Send">
+          <Button onClick={() => void send()} disabled={loading || threadLoading || !input.trim()} aria-label="Send">
             <Send className="w-3.5 h-3.5" />
           </Button>
         </div>

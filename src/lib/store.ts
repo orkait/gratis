@@ -35,6 +35,9 @@ type State = {
   chatModelId: string | null;
   openChat: (id: string) => void;
   closeChat: () => void;
+  currentThreadId: string | null;
+  setCurrentThreadId: (id: string | null) => void;
+  openThreadById: (threadId: string, modelId: string) => void;
   theme: "dark" | "light";
   toggleTheme: () => void;
   sidebarWidth: number;
@@ -68,7 +71,10 @@ export const useStore = create<State>()(
       setCmdk: (v) => set({ cmdkOpen: v }),
       chatModelId: null,
       openChat: (id) => set({ chatModelId: id }),
-      closeChat: () => set({ chatModelId: null }),
+      closeChat: () => set({ chatModelId: null, currentThreadId: null }),
+      currentThreadId: null,
+      setCurrentThreadId: (id) => set({ currentThreadId: id }),
+      openThreadById: (threadId, modelId) => set({ currentThreadId: threadId, chatModelId: modelId }),
       theme: "dark",
       toggleTheme: () => set((s) => {
         const next = s.theme === "dark" ? "light" : "dark";
