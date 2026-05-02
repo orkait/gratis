@@ -7,10 +7,13 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
-  const { filters, setFilter, resetFilters } = useStore();
+  const { filters, setFilter, resetFilters, sidebarWidth, setSidebarWidth } = useStore();
 
   return (
-    <aside className="w-[240px] shrink-0 h-dvh sticky top-0 bg-(--color-bg) border-r border-(--color-border) flex flex-col">
+    <aside
+      style={{ width: sidebarWidth }}
+      className="shrink-0 h-dvh sticky top-0 bg-(--color-bg) border-r border-(--color-border) flex flex-col relative"
+    >
       <div className="h-12 flex items-center gap-2 px-4 border-b border-(--color-border)">
         <div className="w-6 h-6 rounded-md bg-(--color-accent) flex items-center justify-center">
           <Zap className="w-3.5 h-3.5 text-(--color-accent-fg)" strokeWidth={2.5} />
@@ -54,6 +57,7 @@ export function Sidebar() {
           <RotateCcw className="w-3.5 h-3.5" /> Reset filters
         </Button>
       </div>
+      <DragHandle onWidth={setSidebarWidth} />
     </aside>
   );
 }
@@ -108,5 +112,41 @@ function Slider({ label, value, max, step, suffix, onChange, display }: {
       </div>
       <input type="range" min={0} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} className="w-full h-1 accent-(--color-accent) cursor-pointer" />
     </div>
+  );
+}
+
+function DragHandle({ onWidth }: { onWidth: (w: number) => void }) {
+  const startDrag = (clientX: number) => {
+    const onMove = (mx: number) => onWidth(mx);
+    const onMouseMove = (e: MouseEvent) => onMove(e.clientX);
+    const onTouchMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (t) onMove(t.clientX);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchend", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("touchmove", onTouchMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchend", onUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize sidebar"
+      onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX); }}
+      onTouchStart={(e) => { const t = e.touches[0]; if (t) startDrag(t.clientX); }}
+      className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-(--color-accent)/40 active:bg-(--color-accent) transition-colors duration-[120ms]"
+    />
   );
 }
