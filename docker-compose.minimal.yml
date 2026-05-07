@@ -1,0 +1,27 @@
+services:
+  zerocostllm:
+    image: zerocostllm-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zerocostllm-minimal
+    ports:
+      - "3041:8000"
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    command: ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health',timeout=2); sys.exit(0)\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
