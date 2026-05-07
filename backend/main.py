@@ -1,13 +1,12 @@
 import asyncio
-import json
-import math
 import os
 from contextlib import asynccontextmanager
 from typing import Any
 
 import litellm
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
@@ -40,8 +39,43 @@ load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 GOOGLE_AISTUDIO_API_KEY = os.getenv("GOOGLE_AISTUDIO_API_KEY", "")
+LOCAL_API_KEY = os.getenv("LOCAL_API_KEY", "")
 FALLBACK_MODEL = "openrouter/google/gemma-3-27b-it:free"
 OLLAMA_CLOUD_BASE = "https://ollama.com/v1"
+
+# Model alias map: clients sending OpenAI/Anthropic names get routed to free equivalents.
+# Override with MODEL_ALIASES env (JSON object).
+DEFAULT_ALIASES: dict[str, str] = {
+    "gpt-4": "groq/llama-3.3-70b-versatile",
+    "gpt-4-turbo": "groq/llama-3.3-70b-versatile",
+    "gpt-4o": "groq/llama-3.3-70b-versatile",
+    "gpt-4o-mini": "groq/llama-3.1-8b-instant",
+    "gpt-3.5-turbo": "groq/llama-3.1-8b-instant",
+    "claude-3-opus": "openrouter/anthropic/claude-3-opus",
+    "claude-3-sonnet": "groq/llama-3.3-70b-versatile",
+    "claude-3-haiku": "groq/llama-3.1-8b-instant",
+    "claude-3-5-sonnet": "groq/llama-3.3-70b-versatile",
+    "claude-3-5-haiku": "groq/llama-3.1-8b-instant",
+    "claude-sonnet-4": "groq/llama-3.3-70b-versatile",
+    "claude-haiku-4": "groq/llama-3.1-8b-instant",
+}
+
+
+def load_aliases() -> dict[str, str]:
+    raw = os.getenv("MODEL_ALIASES", "")
+    if not raw:
+        return DEFAULT_ALIASES
+    try:
+        import json
+        custom = json.loads(raw)
+        if isinstance(custom, dict):
+            return {**DEFAULT_ALIASES, **custom}
+    except Exception as e:
+        print(f"MODEL_ALIASES parse error: {e}")
+    return DEFAULT_ALIASES
+
+
+ALIASES = load_aliases()
 
 litellm.drop_params = True
 litellm.set_verbose = False
@@ -63,8 +97,59 @@ app.add_middleware(
 )
 
 
+# ===== OpenAI-compat error envelope =====
+
+def openai_error(message: str, status: int, err_type: str = "api_error", code: str | None = None) -> JSONResponse:
+    body = {
+        "error": {
+            "message": message,
+            "type": err_type,
+            "code": code,
+            "param": None,
+        },
+    }
+    return JSONResponse(status_code=status, content=body)
+
+
+@app.exception_handler(HTTPException)
+async def http_exc_handler(_: Request, exc: HTTPException):
+    err_type = "invalid_request_error" if exc.status_code == 400 else "api_error"
+    if exc.status_code == 401:
+        err_type = "authentication_error"
+    elif exc.status_code == 403:
+        err_type = "permission_error"
+    elif exc.status_code == 404:
+        err_type = "not_found_error"
+    elif exc.status_code == 429:
+        err_type = "rate_limit_error"
+    msg = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    return openai_error(msg, exc.status_code, err_type)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exc_handler(_: Request, exc: RequestValidationError):
+    return openai_error(str(exc.errors()), 400, "invalid_request_error")
+
+
+# ===== Auth (optional bearer) =====
+
+async def require_auth(authorization: str | None = Header(default=None)):
+    if not LOCAL_API_KEY:
+        return  # open mode - no auth required
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = authorization[len("Bearer "):].strip()
+    if token != LOCAL_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+
+# ===== Model resolution =====
+
 def resolve_model(model_id: str) -> tuple[str, dict[str, Any]]:
     """Returns (litellm_model_string, extra_kwargs)."""
+    if model_id in ALIASES:
+        model_id = ALIASES[model_id]
+
     if model_id.startswith("aistudio/"):
         slug = model_id[len("aistudio/"):]
         return f"gemini/{slug}", {"api_key": GOOGLE_AISTUDIO_API_KEY}
@@ -104,7 +189,9 @@ async def pick_best_free_model() -> str:
         return FALLBACK_MODEL
 
 
-@app.post("/v1/chat/completions")
+# ===== Chat completions =====
+
+@app.post("/v1/chat/completions", dependencies=[Depends(require_auth)])
 async def chat_completions(request: Request) -> Any:
     body = await request.json()
     model_id: str = body.get("model", "")
@@ -112,9 +199,7 @@ async def chat_completions(request: Request) -> Any:
 
     if is_pool:
         model_id = await pick_best_free_model()
-        litellm_model, extra = resolve_model(model_id)
-    else:
-        litellm_model, extra = resolve_model(model_id)
+    litellm_model, extra = resolve_model(model_id)
 
     messages = body.get("messages", [])
     stream: bool = body.get("stream", False)
@@ -135,11 +220,26 @@ async def chat_completions(request: Request) -> Any:
             )
 
             async def event_stream():
-                async for chunk in response:
-                    yield f"data: {chunk.model_dump_json()}\n\n"
-                yield "data: [DONE]\n\n"
+                try:
+                    async for chunk in response:
+                        payload = chunk.model_dump_json()
+                        yield f"data: {payload}\n\n"
+                except Exception as e:
+                    err = {"error": {"message": str(e), "type": "api_error", "code": getattr(e, "status_code", None)}}
+                    import json as _json
+                    yield f"data: {_json.dumps(err)}\n\n"
+                finally:
+                    yield "data: [DONE]\n\n"
 
-            return StreamingResponse(event_stream(), media_type="text/event-stream")
+            return StreamingResponse(
+                event_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache, no-transform",
+                    "X-Accel-Buffering": "no",
+                    "Connection": "keep-alive",
+                },
+            )
 
         response = await litellm.acompletion(
             model=litellm_model,
@@ -150,11 +250,61 @@ async def chat_completions(request: Request) -> Any:
         )
         return JSONResponse(content=response.model_dump())
 
+    except HTTPException:
+        raise
     except Exception as e:
-        status = getattr(e, "status_code", 500)
-        msg = str(e)
-        raise HTTPException(status_code=status, detail=msg)
+        status = getattr(e, "status_code", 500) or 500
+        raise HTTPException(status_code=status, detail=str(e))
 
+
+# ===== Embeddings =====
+
+@app.post("/v1/embeddings", dependencies=[Depends(require_auth)])
+async def embeddings(request: Request) -> Any:
+    body = await request.json()
+    model_id: str = body.get("model", "")
+    if not model_id:
+        raise HTTPException(status_code=400, detail="model field required")
+    inputs = body.get("input")
+    if inputs is None:
+        raise HTTPException(status_code=400, detail="input field required")
+
+    litellm_model, extra = resolve_model(model_id)
+    passthrough = {k: v for k, v in body.items() if k not in {"model", "input"}}
+
+    try:
+        response = await litellm.aembedding(
+            model=litellm_model,
+            input=inputs,
+            **extra,
+            **passthrough,
+        )
+        return JSONResponse(content=response.model_dump())
+    except HTTPException:
+        raise
+    except Exception as e:
+        status = getattr(e, "status_code", 500) or 500
+        raise HTTPException(status_code=status, detail=str(e))
+
+
+# ===== Models =====
+
+@app.get("/v1/models", dependencies=[Depends(require_auth)])
+async def models():
+    result = await fetch_unified_models()
+    return JSONResponse(content=result)
+
+
+@app.get("/v1/models/{model_id:path}", dependencies=[Depends(require_auth)])
+async def model_get(model_id: str):
+    listing = await fetch_unified_models()
+    found = next((m for m in listing.get("data", []) if m.get("id") == model_id), None)
+    if not found:
+        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
+    return JSONResponse(content=found)
+
+
+# ===== Rankings (extension) =====
 
 @app.get("/v1/rankings")
 async def rankings():
@@ -192,12 +342,27 @@ async def rankings():
     return JSONResponse(content=combined)
 
 
-@app.get("/v1/models")
-async def models():
-    result = await fetch_unified_models()
-    return JSONResponse(content=result)
-
+# ===== Health + Root =====
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/")
+async def root():
+    return {
+        "name": "ZeroCostLLM",
+        "version": "1.0.0",
+        "compat": "openai",
+        "auth": "required" if LOCAL_API_KEY else "none",
+        "endpoints": [
+            "/v1/chat/completions",
+            "/v1/embeddings",
+            "/v1/models",
+            "/v1/models/{id}",
+            "/v1/rankings",
+            "/health",
+        ],
+        "aliases_count": len(ALIASES),
+    }
