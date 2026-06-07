@@ -41,7 +41,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 GOOGLE_AISTUDIO_API_KEY = os.getenv("GOOGLE_AISTUDIO_API_KEY", "")
 LOCAL_API_KEY = os.getenv("LOCAL_API_KEY", "")
-FALLBACK_MODEL = "openrouter/google/gemma-3-27b-it:free"
+FALLBACK_MODEL = "groq/llama-3.3-70b-versatile"
 OLLAMA_CLOUD_BASE = "https://ollama.com/v1"
 
 # Model alias map: clients sending OpenAI/Anthropic names get routed to free equivalents.
@@ -182,12 +182,18 @@ def resolve_model(model_id: str) -> tuple[str, dict[str, Any]]:
 
 
 async def pick_best_free_model() -> str:
+    """Most capable free model from providers that work without account config.
+
+    Avoids OpenRouter for the default pool: its free models require an account
+    data-policy opt-in (openrouter.ai/settings/privacy) and 404 otherwise.
+    """
     try:
-        market = await fetch_market_data()
-        best = next((m for m in market if m["is_free"]), None)
-        return f"openrouter/{best['id']}" if best else FALLBACK_MODEL
+        groq_free = [m for m in build_groq_market_stats(await fetch_groq_models()) if m["is_free"]]
+        if groq_free:
+            return max(groq_free, key=lambda m: m["capability"])["id"]
     except Exception:
-        return FALLBACK_MODEL
+        pass
+    return FALLBACK_MODEL
 
 
 # ===== Chat completions =====
