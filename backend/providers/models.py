@@ -136,12 +136,15 @@ def build_market_stats_from_aistudio(raw: list[dict]) -> list[dict]:
         ctx = _aistudio_ctx(slug)
         capability = params * math.log10(ctx + 1)
         brain = "pro" in lower or "thinking" in lower
+        # Pro-tier gemini models have no free quota (429 limit:0 on free keys,
+        # billed on paid keys). Only flash / flash-lite / gemma are free-callable.
+        is_free = "pro" not in lower
         result.append({
             "id": f"aistudio/{slug}",
             "name": slug,
             "params": params,
             "ctx": ctx,
-            "is_free": True,
+            "is_free": is_free,
             "capability": capability,
             "brain": brain,
             "tools": True,

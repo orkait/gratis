@@ -33,6 +33,7 @@ from providers.cloudflare import (
     strip_cloudflare_prefix,
     get_cloudflare_credentials,
 )
+from providers.intelligence import enrich_with_intelligence
 
 load_dotenv()
 
@@ -339,6 +340,7 @@ async def rankings():
 
     rescored_extra = [rescore(m) for m in extras]
     combined = sorted(openrouter_stats + rescored_extra, key=lambda m: m["balanced"], reverse=True)
+    combined = await enrich_with_intelligence(combined)
     return JSONResponse(content=combined)
 
 

@@ -27,6 +27,10 @@ class ModelStats(TypedDict):
     provider: str
     balanced: float
     value: float
+    intel: float | None
+    intel_coding: float | None
+    intel_math: float | None
+    intel_est: bool
 
 
 def _parse_params(model_id: str, name: str) -> float:
