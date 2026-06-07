@@ -36,6 +36,13 @@ export function useChatThread(modelId: string, threadId: string | null, onThread
   };
 
   useEffect(() => {
+    // Thread we just created lazily (threadId went null -> id during a send):
+    // local state is already correct and an in-flight request may be running.
+    // Reloading from the DB here would wipe it. Skip the reload, keep the flush.
+    if (threadId && threadId === currentIdRef.current) {
+      return () => { void flushNow(); };
+    }
+
     let cancelled = false;
     currentIdRef.current = null;
     creatingRef.current = null;

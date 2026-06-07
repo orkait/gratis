@@ -36,7 +36,7 @@ export function ChatView({ models, onThreadChange }: Props) {
 
   return (
     <ChatActiveView
-      key={`${currentThreadId ?? "new"}:${effectiveModelId}`}
+      key={effectiveModelId}
       modelId={effectiveModelId}
       threadId={currentThreadId}
       models={models}
