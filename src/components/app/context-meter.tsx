@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 export type ContextMeterProps = {
   used: number | null;
   max: number | null;
+  /** used is a heuristic estimate (chars/4), not exact provider tokens. */
+  estimated?: boolean;
   className?: string;
 };
 
@@ -13,7 +15,8 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
-export function ContextMeter({ used, max, className }: ContextMeterProps) {
+export function ContextMeter({ used, max, estimated, className }: ContextMeterProps) {
+  const prefix = estimated ? "~" : "";
   if (used == null || max == null || max <= 0) {
     return (
       <div className={cn("flex items-center gap-1.5 text-[11px] font-mono text-(--color-fg-subtle)", className)} title="Context unknown">
@@ -29,7 +32,7 @@ export function ContextMeter({ used, max, className }: ContextMeterProps) {
   return (
     <div
       className={cn("flex items-center gap-1.5 text-[11px] font-mono", className)}
-      title={`Context: ${formatTokens(used)} / ${formatTokens(max)} (${pct.toFixed(0)}%)`}
+      title={`Context${estimated ? " (estimated)" : ""}: ${formatTokens(used)} / ${formatTokens(max)} (${pct.toFixed(0)}%)`}
     >
       <DonutSvg pct={pct} state={state} />
       <span className={cn(
@@ -37,7 +40,7 @@ export function ContextMeter({ used, max, className }: ContextMeterProps) {
         state === "warning" && "text-(--color-warning)",
         state === "ok" && "text-(--color-fg-muted)",
       )}>
-        {formatTokens(used)}/{formatTokens(max)}
+        {prefix}{formatTokens(used)}/{formatTokens(max)}
       </span>
     </div>
   );

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ChatMarkdown } from "./chat-markdown";
 import { ContextMeter } from "./context-meter";
 import { ModelPickerInline } from "./model-picker-inline";
+import { estimateTokens, trimToContext } from "@/lib/chat/tokens";
 import { cn } from "@/lib/utils";
 
 const SUGGESTIONS = [
@@ -54,19 +55,22 @@ export function ChatView({ models }: Props) {
 }
 
 function ChatActiveView({ modelId, models }: { modelId: string } & Props) {
-  const { currentThreadId, setCurrentThreadId, startNewChat } = useChatSessionStore();
+  const { currentThreadId, setCurrentThreadId, startNewChat, openThread } = useChatSessionStore();
   const { data: thread, isSuccess: threadLoaded } = useThread(currentThreadId);
   const saveThread = useSaveThread();
+  const modelCtx = models.find((m) => m.id === modelId)?.ctx ?? 0;
 
-  // modelId is constant per instance (view is keyed by model), so capturing it
-  // directly is safe and avoids a model-changed transport rebuild mid-conversation.
+  // modelId is constant per instance (keyed by model). Trim history to the model's
+  // context window before sending (sliding window; full history stays in the UI).
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        prepareSendMessagesRequest: ({ messages }) => ({ body: { messages, model: modelId } }),
+        prepareSendMessagesRequest: ({ messages }) => ({
+          body: { messages: trimToContext(messages, modelCtx), model: modelId },
+        }),
       }),
-    [modelId],
+    [modelId, modelCtx],
   );
 
   const { messages, sendMessage, status, stop, setMessages, error } = useChat({ transport });
@@ -74,8 +78,6 @@ function ChatActiveView({ modelId, models }: { modelId: string } & Props) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const isBusy = status === "submitted" || status === "streaming";
-  const lockedModel = messages.length > 0;
-  const modelCtx = models.find((m) => m.id === modelId)?.ctx ?? null;
 
   // Load the active thread's messages into the chat when it changes.
   const loadedIdRef = useRef<string | null>(null);
@@ -123,15 +125,29 @@ function ChatActiveView({ modelId, models }: { modelId: string } & Props) {
     void sendMessage({ text: content });
   };
 
+  // Switching model mid-conversation forks the history into a new thread under
+  // the new model (the original thread is preserved). Empty chat just swaps model.
+  const onModelChange = (newId: string) => {
+    if (newId === modelId || isBusy) return;
+    if (messages.length === 0) {
+      startNewChat(newId);
+      return;
+    }
+    const carried = toChatMessages(messages);
+    void saveThread.mutateAsync({ id: null, modelId: newId, messages: carried }).then((newThreadId) => {
+      openThread(newThreadId, newId);
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col min-w-0 h-dvh">
       <header className="h-12 sticky top-0 z-[1020] bg-(--color-bg)/80 backdrop-blur-md border-b border-(--color-border) flex items-center px-4 gap-3">
-        <ModelPickerInline models={models} value={modelId} onChange={(id) => startNewChat(id)} disabled={lockedModel} />
-        {lockedModel && (
-          <span className="text-[10px] text-(--color-fg-subtle) font-mono">model locked after first message</span>
+        <ModelPickerInline models={models} value={modelId} onChange={onModelChange} disabled={isBusy} />
+        {messages.length > 0 && (
+          <span className="text-[10px] text-(--color-fg-subtle) font-mono">switch model to continue in a new thread</span>
         )}
         <div className="flex-1" />
-        <ContextMeter used={null} max={modelCtx} />
+        <ContextMeter used={messages.length > 0 ? estimateTokens(messages) : null} max={modelCtx || null} estimated />
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-auto">
