@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import { Send, User, Bot, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { Send, Square, User, Bot, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useChatSessionStore } from "@/lib/stores/chat-session-store";
-import { useChatThread } from "@/lib/use-chat-thread";
+import { useThread, useSaveThread } from "@/lib/query/threads";
 import type { ChatMessage } from "@/lib/chat-db";
 import type { ModelStats } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import { ContextMeter } from "./context-meter";
 import { ModelPickerInline } from "./model-picker-inline";
 import { cn } from "@/lib/utils";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const SUGGESTIONS = [
   "Write a Python function to download a URL with retries.",
   "Explain CRDTs in 5 sentences.",
@@ -21,109 +21,131 @@ const SUGGESTIONS = [
   "Refactor this SQL: SELECT * FROM users WHERE id IN (SELECT user_id FROM orders);",
 ];
 
-type Props = {
-  models: ModelStats[];
-  onThreadChange: () => void;
-};
+function uiText(m: UIMessage): string {
+  return m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+}
 
-export function ChatView({ models, onThreadChange }: Props) {
-  const { chatModelId, currentThreadId, setCurrentThreadId, startNewChat } = useChatSessionStore();
-  const effectiveModelId = chatModelId ?? "zero-cost-intelligent";
+function toChatMessages(ms: UIMessage[]): ChatMessage[] {
+  return ms
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .map((m) => ({ role: m.role as "user" | "assistant", content: uiText(m) }))
+    .filter((m) => m.content.length > 0);
+}
+
+function toUIMessages(ms: ChatMessage[]): UIMessage[] {
+  return ms.map((m, i) => ({
+    id: `seed-${i}`,
+    role: m.role,
+    parts: [{ type: "text", text: m.content }],
+  }));
+}
+
+type Props = { models: ModelStats[] };
+
+export function ChatView({ models }: Props) {
+  const { chatModelId, startNewChat } = useChatSessionStore();
 
   if (!chatModelId) {
     return <EmptyState models={models} onPick={(id) => startNewChat(id)} />;
   }
 
-  return (
-    <ChatActiveView
-      key={effectiveModelId}
-      modelId={effectiveModelId}
-      threadId={currentThreadId}
-      models={models}
-      onThreadCreated={(id) => { setCurrentThreadId(id); onThreadChange(); }}
-      onModelChange={(id) => startNewChat(id)}
-    />
-  );
+  // Keyed by model only: lazy thread creation never remounts the view.
+  return <ChatActiveView key={chatModelId} modelId={chatModelId} models={models} />;
 }
 
-function ChatActiveView({
-  modelId,
-  threadId,
-  models,
-  onThreadCreated,
-  onModelChange,
-}: {
-  modelId: string;
-  threadId: string | null;
-  models: ModelStats[];
-  onThreadCreated: (id: string) => void;
-  onModelChange: (id: string) => void;
-}) {
-  const { thread, loading: threadLoading, setMessages, setTokenUsage } = useChatThread(modelId, threadId, onThreadCreated);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+function ChatActiveView({ modelId, models }: { modelId: string } & Props) {
+  const { currentThreadId, setCurrentThreadId, startNewChat } = useChatSessionStore();
+  const { data: thread, isSuccess: threadLoaded } = useThread(currentThreadId);
+  const saveThread = useSaveThread();
 
-  const messages: ChatMessage[] = thread?.messages ?? [];
-  const lastTokens = thread?.tokenUsage ?? null;
-  const modelCtx = models.find((m) => m.id === modelId)?.ctx ?? null;
+  // modelId is constant per instance (view is keyed by model), so capturing it
+  // directly is safe and avoids a model-changed transport rebuild mid-conversation.
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages }) => ({ body: { messages, model: modelId } }),
+      }),
+    [modelId],
+  );
+
+  const { messages, sendMessage, status, stop, setMessages, error } = useChat({ transport });
+
+  const [input, setInput] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isBusy = status === "submitted" || status === "streaming";
   const lockedModel = messages.length > 0;
+  const modelCtx = models.find((m) => m.id === modelId)?.ctx ?? null;
+
+  // Load the active thread's messages into the chat when it changes.
+  const loadedIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    // Ghost pointer: currentThreadId references a thread no longer in idb -> fresh chat.
+    if (currentThreadId && threadLoaded && thread === null) {
+      loadedIdRef.current = null;
+      setMessages([]);
+      setCurrentThreadId(null);
+      return;
+    }
+    if (currentThreadId && thread && loadedIdRef.current !== thread.id) {
+      loadedIdRef.current = thread.id;
+      setMessages(toUIMessages(thread.messages));
+    } else if (!currentThreadId && loadedIdRef.current !== null) {
+      loadedIdRef.current = null;
+      setMessages([]);
+    }
+  }, [currentThreadId, thread, threadLoaded, setMessages, setCurrentThreadId]);
+
+  // Persist exactly once when a turn finishes (streaming -> ready).
+  const prevStatus = useRef(status);
+  useEffect(() => {
+    const was = prevStatus.current;
+    prevStatus.current = status;
+    if (was !== "streaming" || status !== "ready" || messages.length === 0) return;
+    const chatMsgs = toChatMessages(messages);
+    if (chatMsgs.length === 0) return;
+    void saveThread.mutateAsync({ id: currentThreadId, modelId, messages: chatMsgs }).then((id) => {
+      if (!currentThreadId) {
+        loadedIdRef.current = id;
+        setCurrentThreadId(id);
+      }
+    });
+  }, [status, messages, currentThreadId, modelId, saveThread, setCurrentThreadId]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, loading]);
+  }, [messages, status]);
 
-  const send = async (text?: string) => {
+  const submit = (text?: string) => {
     const content = (text ?? input).trim();
-    if (!content || loading) return;
-    const next: ChatMessage = { role: "user", content };
-    const withUser = [...messages, next];
-    await setMessages(withUser);
+    if (!content || isBusy) return;
     setInput("");
-    setLoading(true);
-    try {
-      const r = await axios.post(`${API_BASE}/v1/chat/completions`, {
-        model: modelId,
-        messages: withUser,
-      });
-      const assistant: ChatMessage = { role: "assistant", content: r.data.choices[0].message.content };
-      await setMessages([...withUser, assistant]);
-      const usage = r.data.usage;
-      const used = usage?.prompt_tokens ?? usage?.total_tokens ?? null;
-      if (typeof used === "number") setTokenUsage(used);
-    } catch (err: unknown) {
-      let detail = "Request failed.";
-      if (axios.isAxiosError(err)) {
-        const apiErr = err.response?.data?.detail ?? err.response?.data?.error ?? err.message;
-        detail = typeof apiErr === "string" ? apiErr : (apiErr?.message ?? err.message);
-        if (err.response?.status) detail = `${err.response.status} ${detail}`;
-      } else if (err instanceof Error) detail = err.message;
-      await setMessages([...withUser, { role: "assistant", content: `**Error:** ${detail}` }]);
-    } finally {
-      setLoading(false);
-    }
+    void sendMessage({ text: content });
   };
 
   return (
     <div className="flex-1 flex flex-col min-w-0 h-dvh">
       <header className="h-12 sticky top-0 z-[1020] bg-(--color-bg)/80 backdrop-blur-md border-b border-(--color-border) flex items-center px-4 gap-3">
-        <ModelPickerInline models={models} value={modelId} onChange={onModelChange} disabled={lockedModel} />
+        <ModelPickerInline models={models} value={modelId} onChange={(id) => startNewChat(id)} disabled={lockedModel} />
         {lockedModel && (
           <span className="text-[10px] text-(--color-fg-subtle) font-mono">model locked after first message</span>
         )}
         <div className="flex-1" />
-        <ContextMeter used={lastTokens} max={modelCtx} />
+        <ContextMeter used={null} max={modelCtx} />
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-auto">
         <div className="max-w-[760px] mx-auto px-6 py-6 space-y-4">
-          {messages.length === 0 && !threadLoading && (
-            <ChatGreeting modelId={modelId} onPick={(s) => void send(s)} />
-          )}
-          {messages.map((m, i) => (
-            <MessageRow key={i} message={m} />
+          {messages.length === 0 && <ChatGreeting modelId={modelId} onPick={(s) => submit(s)} />}
+          {messages.map((m) => (
+            <MessageRow key={m.id} role={m.role} content={uiText(m)} />
           ))}
-          {loading && <TypingIndicator />}
+          {status === "submitted" && <TypingIndicator />}
+          {error && (
+            <div className="text-[13px] text-(--color-danger) bg-(--color-danger-soft) rounded-lg px-4 py-2.5">
+              <strong>Error:</strong> {error.message}
+            </div>
+          )}
         </div>
       </div>
 
@@ -132,37 +154,50 @@ function ChatActiveView({
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                submit();
+              }
+            }}
             placeholder={`Message ${modelId}...`}
             rows={1}
             className="flex-1 resize-none bg-(--color-surface-1) border border-(--color-border) rounded-md px-3 py-2 text-[13px] outline-none focus:border-(--color-accent) max-h-[200px]"
-            disabled={loading || threadLoading}
           />
-          <Button onClick={() => void send()} disabled={loading || threadLoading || !input.trim()} aria-label="Send">
-            <Send className="w-3.5 h-3.5" />
-          </Button>
+          {isBusy ? (
+            <Button onClick={() => stop()} variant="outline" aria-label="Stop">
+              <Square className="w-3.5 h-3.5" />
+            </Button>
+          ) : (
+            <Button onClick={() => submit()} disabled={!input.trim()} aria-label="Send">
+              <Send className="w-3.5 h-3.5" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function MessageRow({ message }: { message: ChatMessage }) {
+function MessageRow({ role, content }: { role: string; content: string }) {
+  const isUser = role === "user";
   return (
-    <div className={cn("flex gap-2", message.role === "user" && "flex-row-reverse")}>
-      <div className={cn(
-        "w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5",
-        message.role === "user" ? "bg-(--color-accent)" : "bg-(--color-surface-2) border border-(--color-border)",
-      )}>
-        {message.role === "user" ? <User className="w-3.5 h-3.5 text-(--color-accent-fg)" /> : <Bot className="w-3.5 h-3.5 text-(--color-fg-muted)" />}
+    <div className={cn("flex gap-2", isUser && "flex-row-reverse")}>
+      <div
+        className={cn(
+          "w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5",
+          isUser ? "bg-(--color-accent)" : "bg-(--color-surface-2) border border-(--color-border)",
+        )}
+      >
+        {isUser ? <User className="w-3.5 h-3.5 text-(--color-accent-fg)" /> : <Bot className="w-3.5 h-3.5 text-(--color-fg-muted)" />}
       </div>
-      <div className={cn(
-        "max-w-[85%] rounded-lg px-4 py-2.5 text-[14px] leading-relaxed",
-        message.role === "user"
-          ? "bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap"
-          : "bg-(--color-surface-1) text-(--color-fg)",
-      )}>
-        {message.role === "user" ? message.content : <ChatMarkdown content={message.content} />}
+      <div
+        className={cn(
+          "max-w-[85%] rounded-lg px-4 py-2.5 text-[14px] leading-relaxed",
+          isUser ? "bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap" : "bg-(--color-surface-1) text-(--color-fg)",
+        )}
+      >
+        {isUser ? content : <ChatMarkdown content={content} />}
       </div>
     </div>
   );

@@ -14,9 +14,6 @@ export default function Page() {
   const { startNewChat } = useChatSessionStore();
   const { data: models = [] } = useRankings();
   const [helpOpen, setHelpOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const refreshThreads = () => setRefreshKey((k) => k + 1);
 
   useGlobalHotkeys({
     "cmdk.toggle": () => setCmdk(!cmdkOpen),
@@ -34,8 +31,8 @@ export default function Page() {
 
   return (
     <div className="flex min-h-dvh bg-(--color-bg) text-(--color-fg)">
-      <ChatSidebar refreshKey={refreshKey} />
-      <ChatView models={models} onThreadChange={refreshThreads} />
+      <ChatSidebar />
+      <ChatView models={models} />
       <CommandPalette models={models} />
       <HelpSheet open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>

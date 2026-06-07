@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Plus, BarChart3, Archive, Search, Trash2, Zap } from "lucide-react";
-import { listThreads, deleteThread, type ChatThread } from "@/lib/chat-db";
+import { type ChatThread } from "@/lib/chat-db";
 import { useChatSessionStore } from "@/lib/stores/chat-session-store";
+import { useThreads, useDeleteThread } from "@/lib/query/threads";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -36,16 +37,11 @@ const BUCKET_LABEL: Record<string, string> = {
   older: "Older",
 };
 
-export function ChatSidebar({ refreshKey }: { refreshKey: number }) {
+export function ChatSidebar() {
   const { currentThreadId, openThread, startNewChat, setCurrentThreadId } = useChatSessionStore();
-  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const { data: threads = [] } = useThreads();
+  const deleteThread = useDeleteThread();
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    void listThreads().then((all) => { if (!cancelled) setThreads(all); });
-    return () => { cancelled = true; };
-  }, [refreshKey]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return threads;
@@ -66,8 +62,7 @@ export function ChatSidebar({ refreshKey }: { refreshKey: number }) {
     e.stopPropagation();
     e.preventDefault();
     if (!confirm("Delete this chat?")) return;
-    await deleteThread(id);
-    setThreads((prev) => prev.filter((t) => t.id !== id));
+    await deleteThread.mutateAsync(id);
     if (currentThreadId === id) setCurrentThreadId(null);
   };
 
@@ -103,26 +98,30 @@ export function ChatSidebar({ refreshKey }: { refreshKey: number }) {
                 {list.map((t) => {
                   const active = currentThreadId === t.id;
                   return (
-                    <button
+                    <div
                       key={t.id}
-                      type="button"
-                      onClick={() => openThread(t.id, t.modelId)}
                       className={cn(
-                        "group w-full px-2 h-9 rounded-md flex items-center gap-2 text-left cursor-pointer transition-colors duration-[120ms]",
+                        "group w-full rounded-md flex items-center transition-colors duration-[120ms]",
                         active ? "bg-(--color-accent-soft) text-(--color-fg)" : "text-(--color-fg-muted) hover:bg-(--color-surface-1) hover:text-(--color-fg)",
                       )}
                     >
-                      <ProviderAvatar provider={safeProvider(t.modelId)} size="xs" />
-                      <span className="flex-1 truncate text-[13px]">{t.title}</span>
+                      <button
+                        type="button"
+                        onClick={() => openThread(t.id, t.modelId)}
+                        className="flex-1 min-w-0 px-2 h-9 flex items-center gap-2 text-left cursor-pointer"
+                      >
+                        <ProviderAvatar provider={safeProvider(t.modelId)} size="xs" />
+                        <span className="flex-1 truncate text-[13px]">{t.title}</span>
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => void handleDelete(e, t.id)}
                         aria-label="Delete chat"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-[120ms] text-(--color-fg-subtle) hover:text-(--color-danger) cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-[120ms] text-(--color-fg-subtle) hover:text-(--color-danger) cursor-pointer h-9 pl-1 pr-2 flex items-center"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
