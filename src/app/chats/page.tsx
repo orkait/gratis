@@ -10,7 +10,7 @@ import {
   getStorageEstimate,
   type ChatThread,
 } from "@/lib/chat-db";
-import { useStore } from "@/lib/store";
+import { useChatSessionStore } from "@/lib/stores/chat-session-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,7 +82,7 @@ function formatBytes(n: number): string {
 
 export default function ChatsPage() {
   const router = useRouter();
-  const { openThread } = useStore();
+  const { openThread } = useChatSessionStore();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");

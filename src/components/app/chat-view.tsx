@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Send, User, Bot, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useStore } from "@/lib/store";
+import { useChatSessionStore } from "@/lib/stores/chat-session-store";
 import { useChatThread } from "@/lib/use-chat-thread";
 import type { ChatMessage } from "@/lib/chat-db";
 import type { ModelStats } from "@/lib/types";
@@ -27,7 +27,7 @@ type Props = {
 };
 
 export function ChatView({ models, onThreadChange }: Props) {
-  const { chatModelId, currentThreadId, setCurrentThreadId, startNewChat } = useStore();
+  const { chatModelId, currentThreadId, setCurrentThreadId, startNewChat } = useChatSessionStore();
   const effectiveModelId = chatModelId ?? "zero-cost-intelligent";
 
   if (!chatModelId) {

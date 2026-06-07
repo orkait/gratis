@@ -2,7 +2,9 @@
 import { ChevronUp, ChevronDown, Brain, Wrench, MessageSquare, BookOpen, Lock, Ghost, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ProviderAvatar } from "@/components/ui/provider-avatar";
-import { useStore, type SortCol, type Filters, type PageSize } from "@/lib/store";
+import { useFiltersStore, type SortCol, type Filters, type PageSize } from "@/lib/stores/filters-store";
+import { useUIStore } from "@/lib/stores/ui-store";
+import { useChatSessionStore } from "@/lib/stores/chat-session-store";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +41,9 @@ function sortValue(m: ModelStats, col: SortCol): number | string | null {
 }
 
 export function ModelTable({ models, loading }: { models: ModelStats[]; loading: boolean }) {
-  const { sort, openDrawer, drawerModelId, page, pageSize, setPage, setPageSize, startNewChat } = useStore();
+  const { sort, page, pageSize, setPage, setPageSize } = useFiltersStore();
+  const { openDrawer, drawerModelId } = useUIStore();
+  const { startNewChat } = useChatSessionStore();
   const router = useRouter();
 
   if (loading) {
@@ -207,7 +211,7 @@ function Pagination({ start, end, total, page, totalPages, pageSize, onPage, onS
 }
 
 function SortHead({ col, label, align = "left", highlighted = false }: { col: SortCol; label: string; align?: "left" | "right"; highlighted?: boolean }) {
-  const { sort, setSort } = useStore();
+  const { sort, setSort } = useFiltersStore();
   const active = sort.col === col;
   return (
     <TH className={cn("cursor-pointer select-none hover:text-(--color-fg)", align === "right" && "text-right", highlighted && "bg-(--color-accent-soft)")} onClick={() => setSort(col)}>

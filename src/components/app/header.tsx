@@ -1,12 +1,12 @@
 "use client";
 import { Search, HelpCircle } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { useUIStore } from "@/lib/stores/ui-store";
 import { Kbd } from "@/components/ui/kbd";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./theme-toggle";
 
 export function Header({ count, onHelpClick }: { count: number; onHelpClick: () => void }) {
-  const { setCmdk } = useStore();
+  const { setCmdk } = useUIStore();
   return (
     <header className="h-12 sticky top-0 z-[1020] bg-(--color-bg)/80 backdrop-blur-md border-b border-(--color-border) flex items-center px-4 gap-4">
       <div className="flex items-baseline gap-2">

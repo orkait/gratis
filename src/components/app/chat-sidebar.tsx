@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Plus, BarChart3, Archive, Search, Trash2, Zap } from "lucide-react";
 import { listThreads, deleteThread, type ChatThread } from "@/lib/chat-db";
-import { useStore } from "@/lib/store";
+import { useChatSessionStore } from "@/lib/stores/chat-session-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -37,7 +37,7 @@ const BUCKET_LABEL: Record<string, string> = {
 };
 
 export function ChatSidebar({ refreshKey }: { refreshKey: number }) {
-  const { currentThreadId, openThread, startNewChat, setCurrentThreadId } = useStore();
+  const { currentThreadId, openThread, startNewChat, setCurrentThreadId } = useChatSessionStore();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [query, setQuery] = useState("");
 

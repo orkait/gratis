@@ -13,6 +13,10 @@ export type ModelStats = {
   provider: string;
   balanced: number;
   value: number;
+  intel: number | null;
+  intel_coding: number | null;
+  intel_math: number | null;
+  intel_est: boolean;
 };
 
 export type ProviderFilter =

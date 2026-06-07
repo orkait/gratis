@@ -1,5 +1,5 @@
 "use client";
-import { useStore } from "@/lib/store";
+import { useFiltersStore } from "@/lib/stores/filters-store";
 import type { ProviderFilter } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ProviderAvatar } from "@/components/ui/provider-avatar";
@@ -27,7 +27,7 @@ const PROVIDERS: { id: ProviderFilter; label: string; dot: string }[] = [
 ];
 
 export function ProviderChips() {
-  const { filters, setFilter } = useStore();
+  const { filters, setFilter } = useFiltersStore();
   return (
     <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1">
       {PROVIDERS.map((p) => {

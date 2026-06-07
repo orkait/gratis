@@ -1,14 +1,16 @@
 "use client";
 import { Zap, Brain, Wrench, Search, RotateCcw, Archive } from "lucide-react";
 import Link from "next/link";
-import { useStore } from "@/lib/store";
+import { useFiltersStore } from "@/lib/stores/filters-store";
+import { useUIStore } from "@/lib/stores/ui-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
-  const { filters, setFilter, resetFilters, sidebarWidth, setSidebarWidth } = useStore();
+  const { filters, setFilter, resetFilters } = useFiltersStore();
+  const { sidebarWidth, setSidebarWidth } = useUIStore();
 
   return (
     <aside

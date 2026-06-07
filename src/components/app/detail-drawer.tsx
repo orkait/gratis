@@ -7,13 +7,15 @@ import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from "@/comp
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useStore } from "@/lib/store";
+import { useUIStore } from "@/lib/stores/ui-store";
+import { useChatSessionStore } from "@/lib/stores/chat-session-store";
 import type { ModelStats } from "@/lib/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export function DetailDrawer({ models }: { models: ModelStats[] }) {
-  const { drawerModelId, closeDrawer, startNewChat } = useStore();
+  const { drawerModelId, closeDrawer } = useUIStore();
+  const { startNewChat } = useChatSessionStore();
   const router = useRouter();
   const open = drawerModelId !== null;
   const model = models.find((m) => m.id === drawerModelId);

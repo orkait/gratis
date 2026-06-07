@@ -1,8 +1,8 @@
 "use client";
 import { useState, useMemo } from "react";
-import useSWR from "swr";
-import axios from "axios";
-import { useStore } from "@/lib/store";
+import { useFiltersStore } from "@/lib/stores/filters-store";
+import { useUIStore } from "@/lib/stores/ui-store";
+import { useRankings } from "@/lib/query/rankings";
 import { useGlobalHotkeys } from "@/lib/use-global-hotkeys";
 import { Sidebar } from "@/components/app/sidebar";
 import { Header } from "@/components/app/header";
@@ -12,14 +12,11 @@ import { ModelTable, applyFilters } from "@/components/app/model-table";
 import { DetailDrawer } from "@/components/app/detail-drawer";
 import { CommandPalette } from "@/components/app/command-palette";
 import { HelpSheet } from "@/components/app/help-sheet";
-import type { ModelStats } from "@/lib/types";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-const fetcher = async (url: string) => (await axios.get<ModelStats[]>(url)).data;
 
 export default function ModelsPage() {
-  const { filters, drawerModelId, openDrawer, closeDrawer, setCmdk, cmdkOpen } = useStore();
-  const { data: models = [], isLoading } = useSWR(`${API_BASE}/v1/rankings`, fetcher, { revalidateOnFocus: false });
+  const { filters } = useFiltersStore();
+  const { drawerModelId, openDrawer, closeDrawer, setCmdk, cmdkOpen } = useUIStore();
+  const { data: models = [], isLoading } = useRankings();
   const filtered = useMemo(() => applyFilters(models, filters), [models, filters]);
   const [helpOpen, setHelpOpen] = useState(false);
 

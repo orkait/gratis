@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { MessageSquare, Eye, Filter, History, Archive } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { useUIStore } from "@/lib/stores/ui-store";
+import { useFiltersStore } from "@/lib/stores/filters-store";
+import { useChatSessionStore } from "@/lib/stores/chat-session-store";
 import { listThreads, type ChatThread } from "@/lib/chat-db";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Command, CommandInput, CommandList, CommandItem, CommandGroup, CommandEmpty, commandClasses } from "@/components/ui/command";
@@ -10,7 +12,9 @@ import type { ModelStats } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 export function CommandPalette({ models }: { models: ModelStats[] }) {
-  const { cmdkOpen, setCmdk, openDrawer, setFilter, resetFilters, closeDrawer, openThread, startNewChat } = useStore();
+  const { cmdkOpen, setCmdk, openDrawer, closeDrawer } = useUIStore();
+  const { setFilter, resetFilters } = useFiltersStore();
+  const { openThread, startNewChat } = useChatSessionStore();
   const router = useRouter();
   const cls = commandClasses();
   const [recent, setRecent] = useState<ChatThread[]>([]);

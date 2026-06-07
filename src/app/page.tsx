@@ -1,21 +1,18 @@
 "use client";
 import { useState } from "react";
-import useSWR from "swr";
-import axios from "axios";
-import { useStore } from "@/lib/store";
+import { useUIStore } from "@/lib/stores/ui-store";
+import { useChatSessionStore } from "@/lib/stores/chat-session-store";
+import { useRankings } from "@/lib/query/rankings";
 import { useGlobalHotkeys } from "@/lib/use-global-hotkeys";
 import { ChatSidebar } from "@/components/app/chat-sidebar";
 import { ChatView } from "@/components/app/chat-view";
 import { CommandPalette } from "@/components/app/command-palette";
 import { HelpSheet } from "@/components/app/help-sheet";
-import type { ModelStats } from "@/lib/types";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-const fetcher = async (url: string) => (await axios.get<ModelStats[]>(url)).data;
 
 export default function Page() {
-  const { setCmdk, cmdkOpen, startNewChat } = useStore();
-  const { data: models = [] } = useSWR(`${API_BASE}/v1/rankings`, fetcher, { revalidateOnFocus: false });
+  const { setCmdk, cmdkOpen } = useUIStore();
+  const { startNewChat } = useChatSessionStore();
+  const { data: models = [] } = useRankings();
   const [helpOpen, setHelpOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
