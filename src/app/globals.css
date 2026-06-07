@@ -76,6 +76,50 @@
   --color-border-strong: oklch(0 0 0 / 0.14);
 }
 
+/* ============ Warm Editorial theme - scoped to the chat surface ============ */
+.theme-editorial {
+  --color-bg: oklch(0.98 0.012 78);
+  --color-fg: oklch(0.20 0.008 56);
+  --color-fg-muted: oklch(0.44 0.012 56);
+  --color-fg-subtle: oklch(0.58 0.012 60);
+  --color-fg-disabled: oklch(0.74 0.010 60);
+  --color-surface-1: oklch(0.965 0.012 78);
+  --color-surface-2: oklch(0.935 0.014 78);
+  --color-surface-3: oklch(0.900 0.016 78);
+  --color-border: oklch(0.20 0.01 60 / 0.10);
+  --color-border-strong: oklch(0.20 0.01 60 / 0.20);
+
+  --color-accent: oklch(0.58 0.14 40);
+  --color-accent-fg: oklch(0.99 0.01 80);
+  --color-accent-soft: oklch(0.58 0.14 40 / 0.12);
+
+  --color-success: oklch(0.55 0.09 150);
+  --color-success-soft: oklch(0.55 0.09 150 / 0.14);
+  --color-warning: oklch(0.66 0.12 70);
+  --color-warning-soft: oklch(0.66 0.12 70 / 0.16);
+  --color-danger: oklch(0.55 0.16 25);
+  --color-danger-soft: oklch(0.55 0.16 25 / 0.14);
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-lora), Georgia, ui-serif, serif;
+
+  /* friendlier, rounder */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+}
+
+.theme-editorial .serif {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+}
+
 @layer base {
   html, body {
     background: var(--color-bg);
