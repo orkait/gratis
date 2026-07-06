@@ -5,7 +5,7 @@
   --color-bg: oklch(0.115 0.008 260);
   --color-fg: oklch(0.95 0.005 260);
   --color-fg-muted: oklch(0.72 0.006 260);
-  --color-fg-subtle: oklch(0.50 0.008 260);
+  --color-fg-subtle: oklch(0.60 0.008 260); /* WCAG-AA: 0.50 failed (3.3:1) on small metadata text */
   --color-fg-disabled: oklch(0.36 0.008 260);
   --color-surface-1: oklch(0.155 0.008 260);
   --color-surface-2: oklch(0.190 0.008 260);
@@ -13,9 +13,9 @@
   --color-border: oklch(1 0 0 / 0.08);
   --color-border-strong: oklch(1 0 0 / 0.14);
 
-  --color-accent: oklch(0.60 0.165 265);
+  --color-accent: oklch(0.64 0.19 255); /* electric blue: punchier leaderboard energy + higher contrast (5.4-6.0:1) */
   --color-accent-fg: oklch(0.99 0 0);
-  --color-accent-soft: oklch(0.60 0.165 265 / 0.12);
+  --color-accent-soft: oklch(0.64 0.19 255 / 0.14);
 
   --color-success: oklch(0.65 0.15 145);
   --color-success-soft: oklch(0.65 0.15 145 / 0.14);
@@ -67,13 +67,16 @@
   --color-bg: oklch(0.99 0.003 260);
   --color-fg: oklch(0.13 0.005 260);
   --color-fg-muted: oklch(0.40 0.007 260);
-  --color-fg-subtle: oklch(0.55 0.008 260);
+  --color-fg-subtle: oklch(0.50 0.008 260); /* WCAG-AA on light surfaces (0.55 failed at 4.1:1) */
   --color-fg-disabled: oklch(0.70 0.008 260);
   --color-surface-1: oklch(0.97 0.005 260);
   --color-surface-2: oklch(0.94 0.006 260);
   --color-surface-3: oklch(0.91 0.007 260);
   --color-border: oklch(0 0 0 / 0.08);
   --color-border-strong: oklch(0 0 0 / 0.14);
+  /* darker accent so accent-colored TEXT passes AA on light (the dark theme's electric accent is only 3.3:1 here) */
+  --color-accent: oklch(0.52 0.20 255);
+  --color-accent-soft: oklch(0.52 0.20 255 / 0.10);
 }
 
 /* ============ Warm Editorial theme - scoped to the chat surface ============ */

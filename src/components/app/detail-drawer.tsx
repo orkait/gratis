@@ -2,14 +2,15 @@
 import { useState } from "react";
 import { X, Copy, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Dialog } from "@base-ui-components/react/dialog";
+import { Tabs } from "@base-ui-components/react/tabs";
 import { ProviderAvatar } from "@/components/ui/provider-avatar";
-import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from "@/components/ui/sheet";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useChatSessionStore } from "@/lib/stores/chat-session-store";
 import type { ModelStats } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -20,79 +21,102 @@ export function DetailDrawer({ models }: { models: ModelStats[] }) {
   const open = drawerModelId !== null;
   const model = models.find((m) => m.id === drawerModelId);
 
-  if (!open || !model) return null;
-
   return (
-    <Sheet open={open} onOpenChange={(v: boolean) => !v && closeDrawer()}>
-      <SheetContent>
-        <SheetHeader>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <ProviderAvatar provider={model.provider} size="md" />
-            <div className="flex flex-col gap-0.5 min-w-0">
-              <div className="text-[14px] font-semibold truncate">{model.id}</div>
-              <div className="text-[11px] text-(--color-fg-muted)">{model.provider}</div>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={closeDrawer} aria-label="Close">
-            <X className="w-4 h-4" />
-          </Button>
-        </SheetHeader>
+    <Dialog.Root open={open} onOpenChange={(o) => { if (!o) closeDrawer(); }}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-[2px] transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 motion-reduce:transition-none" />
+        <Dialog.Popup className="fixed right-0 top-0 z-[71] flex h-dvh w-full max-w-[440px] flex-col bg-(--color-surface-1) border-l border-(--color-border) shadow-[0_0_60px_rgb(0_0_0_/_0.45)] transition-transform duration-250 ease-out data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full motion-reduce:transition-none focus:outline-none">
+          {model && (
+            <>
+              <header className="flex items-center justify-between gap-2 px-5 py-4 border-b border-(--color-border) shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <ProviderAvatar provider={model.provider} size="md" />
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <Dialog.Title className="text-[14px] font-semibold truncate">{model.id}</Dialog.Title>
+                    <Dialog.Description className="text-[11px] text-(--color-fg-muted)">{model.provider}</Dialog.Description>
+                  </div>
+                </div>
+                <Dialog.Close render={<Button variant="ghost" size="icon" aria-label="Close"><X className="w-4 h-4" /></Button>} />
+              </header>
 
-        <SheetBody>
-          <Tabs defaultValue="overview">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="code">Code</TabsTrigger>
-              <TabsTrigger value="metrics">Metrics</TabsTrigger>
-            </TabsList>
+              <div className="flex-1 overflow-y-auto p-5">
+                <Tabs.Root defaultValue="overview">
+                  <Tabs.List className="flex gap-0.5 p-0.5 mb-4 rounded-md border border-(--color-border) bg-(--color-surface-2) w-fit">
+                    {["overview", "code", "metrics"].map((t) => (
+                      <Tabs.Tab
+                        key={t}
+                        value={t}
+                        className={cn(
+                          "h-7 px-3 rounded text-[12px] capitalize cursor-pointer transition-colors duration-150",
+                          "text-(--color-fg-subtle) hover:text-(--color-fg)",
+                          "data-[active]:bg-(--color-surface-1) data-[active]:text-(--color-accent) data-[active]:shadow-sm",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-accent)/40",
+                        )}
+                      >
+                        {t}
+                      </Tabs.Tab>
+                    ))}
+                  </Tabs.List>
 
-            <TabsContent value="overview">
-              <div className="grid grid-cols-2 gap-3">
-                <Stat label="Tier" value={model.is_free ? <Badge variant="success">FREE</Badge> : <Badge>PAID</Badge>} />
-                <Stat label="Score" value={<span className="font-mono text-(--color-accent) text-[14px] font-semibold">{model.balanced.toFixed(1)}</span>} />
-                <Stat label="Params" value={`${model.params}B`} />
-                <Stat label="Context" value={`${(model.ctx / 1000).toFixed(0)}K`} />
-                <Stat label="TPS" value={model.tps != null ? model.tps.toFixed(1) : "-"} />
-                <Stat label="Uptime" value={model.uptime != null ? `${model.uptime.toFixed(2)}%` : "-"} />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {model.brain && <Badge variant="accent">Reasoning</Badge>}
-                {model.tools && <Badge variant="info">Tool calling</Badge>}
-                {model.open && <Badge>Open weights</Badge>}
-              </div>
-            </TabsContent>
+                  <Tabs.Panel value="overview" className="focus:outline-none">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Stat label="Tier" value={model.is_free ? <Badge variant="success">FREE</Badge> : <Badge>PAID</Badge>} />
+                      <Stat label="Overall" value={<span className="font-mono text-(--color-accent) text-[14px] font-semibold">{(model.scores?.overall ?? model.balanced).toFixed(1)}</span>} />
+                      <Stat label="Intelligence" value={model.scores?.intelligence != null ? model.scores.intelligence.toFixed(0) : "-"} />
+                      <Stat label="Confidence" value={model.confidence ?? "-"} />
+                      <Stat label="Context" value={`${(model.ctx / 1000).toFixed(0)}K`} />
+                      <Stat label="TPS" value={model.tps != null ? model.tps.toFixed(1) : "-"} />
+                    </div>
+                    {model.arena_elo != null && (
+                      <div className="mt-3 rounded-md bg-(--color-surface-2) px-3 py-2.5 text-[12px] text-(--color-fg-muted)">
+                        Human preference (LMArena Elo): <span className="font-mono text-(--color-fg)">{model.arena_elo}</span>
+                        {model.divergence === "human-favored" && <span className="text-(--color-success)"> · humans rate it above its benchmarks</span>}
+                        {model.divergence === "bench-favored" && <span className="text-(--color-warning)"> · benchmarks rate it above human preference</span>}
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {model.brain && <Badge variant="accent">Reasoning</Badge>}
+                      {model.tools && <Badge variant="info">Tool calling</Badge>}
+                      {model.open && <Badge>Open weights</Badge>}
+                      {(model.badges ?? []).map((b) => <Badge key={b}>{b}</Badge>)}
+                    </div>
+                  </Tabs.Panel>
 
-            <TabsContent value="code">
-              <CodeBlock label="cURL" code={`curl ${API_BASE}/v1/chat/completions \\
+                  <Tabs.Panel value="code" className="focus:outline-none">
+                    <CodeBlock label="cURL" code={`curl ${API_BASE}/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -d '{"model":"${model.id}","messages":[{"role":"user","content":"hi"}]}'`} />
-              <CodeBlock label="Python" code={`from openai import OpenAI
+                    <CodeBlock label="Python" code={`from openai import OpenAI
 client = OpenAI(base_url="${API_BASE}/v1", api_key="any")
 r = client.chat.completions.create(
   model="${model.id}",
   messages=[{"role": "user", "content": "hi"}],
 )
 print(r.choices[0].message.content)`} />
-            </TabsContent>
+                  </Tabs.Panel>
 
-            <TabsContent value="metrics">
-              <div className="text-[13px] text-(--color-fg-muted) leading-relaxed">
-                Provider: <span className="text-(--color-fg)">{model.provider}</span><br/>
-                Capability score: <span className="font-mono text-(--color-fg)">{model.capability.toFixed(2)}</span><br/>
-                Value index: <span className="font-mono text-(--color-fg)">{model.value.toLocaleString()}</span>
+                  <Tabs.Panel value="metrics" className="focus:outline-none">
+                    <div className="text-[13px] text-(--color-fg-muted) leading-relaxed">
+                      Provider: <span className="text-(--color-fg)">{model.provider}</span><br />
+                      Benchmarks used: <span className="font-mono text-(--color-fg)">{model.bench_count ?? 0}</span><br />
+                      Cross-benchmark agreement: <span className="font-mono text-(--color-fg)">{model.consensus != null ? `${model.consensus.toFixed(0)}%` : "-"}</span><br />
+                      Value index: <span className="font-mono text-(--color-fg)">{model.value.toLocaleString()}</span>
+                    </div>
+                  </Tabs.Panel>
+                </Tabs.Root>
               </div>
-            </TabsContent>
-          </Tabs>
-        </SheetBody>
 
-        <SheetFooter>
-          <Button variant="outline" onClick={closeDrawer}>Close</Button>
-          <Button onClick={() => { startNewChat(model.id); closeDrawer(); router.push("/"); }}>
-            <ExternalLink className="w-3.5 h-3.5" /> Open in chat
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+              <footer className="border-t border-(--color-border) px-5 py-4 flex gap-2 justify-end shrink-0">
+                <Dialog.Close render={<Button variant="outline">Close</Button>} />
+                <Button onClick={() => { startNewChat(model.id); closeDrawer(); router.push("/"); }}>
+                  <ExternalLink className="w-3.5 h-3.5" /> Open in chat
+                </Button>
+              </footer>
+            </>
+          )}
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 

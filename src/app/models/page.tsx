@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/app/sidebar";
 import { Header } from "@/components/app/header";
 import { KpiStrip } from "@/components/app/kpi-strip";
 import { ProviderChips } from "@/components/app/provider-chips";
+import { TaskLens } from "@/components/app/task-lens";
 import { ModelTable, applyFilters } from "@/components/app/model-table";
 import { DetailDrawer } from "@/components/app/detail-drawer";
 import { CommandPalette } from "@/components/app/command-palette";
@@ -52,6 +53,7 @@ export default function ModelsPage() {
         <main className="flex-1 overflow-auto p-6">
           <KpiStrip models={filtered} loading={isLoading} />
           <ProviderChips />
+          <TaskLens />
           <ModelTable models={filtered} loading={isLoading} />
         </main>
       </div>
