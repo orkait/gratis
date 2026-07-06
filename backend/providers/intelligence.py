@@ -9,6 +9,14 @@ CACHE_TTL_S = 600.0
 
 _ALIAS_TAILS = ("-fast", "-latest")
 
+# Individual community benchmarks AA exposes per model (0..1 unless noted). Kept RAW here; scoring.py
+# normalizes + blends them per dimension. These have far better coverage than AA's rolled-up
+# coding_index (26%) — e.g. gpqa 94%, scicode 93%, hle 93%, tau2 78%, terminalbench_hard 77%.
+BENCH_KEYS = (
+    "mmlu_pro", "gpqa", "hle", "livecodebench", "scicode", "math_500", "aime", "aime_25",
+    "ifbench", "lcr", "terminalbench_hard", "terminalbench_v2_1", "tau2", "tau_banking",
+)
+
 _cache: dict = {"data": None, "ts": 0.0}
 
 
@@ -53,8 +61,7 @@ def _build_index_map(raw: list[dict]) -> dict[str, dict]:
                 "intel": intel,
                 "coding": evals.get("artificial_analysis_coding_index"),
                 "math": evals.get("artificial_analysis_math_index"),
-                "gpqa": evals.get("gpqa"),
-                "mmlu_pro": evals.get("mmlu_pro"),
+                "benches": {k: evals[k] for k in BENCH_KEYS if evals.get(k) is not None},
             }
     return result
 
@@ -101,10 +108,12 @@ async def enrich_with_intelligence(stats: list[dict]) -> list[dict]:
             m["intel"] = hit["intel"]
             m["intel_coding"] = hit["coding"]
             m["intel_math"] = hit["math"]
+            m["benches"] = hit.get("benches", {})
             m["intel_est"] = False
         else:
             m["intel"] = None
             m["intel_coding"] = None
             m["intel_math"] = None
+            m["benches"] = {}
             m["intel_est"] = True
     return stats

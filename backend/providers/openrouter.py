@@ -27,6 +27,8 @@ class ModelStats(TypedDict):
     provider: str
     balanced: float
     value: float
+    price_in: float   # $/token input (0 for free lanes); kept so the UI can show cost with no extra fetch
+    price_out: float  # $/token output
     intel: float | None
     intel_coding: float | None
     intel_math: float | None
@@ -166,6 +168,8 @@ async def fetch_market_data() -> list[ModelStats]:
                 "provider": OPENROUTER_PROVIDER_NAME,
                 "balanced": 0.0,
                 "value": _get_value(capability, pricing.get("prompt", "0"), pricing.get("completion", "0")),
+                "price_in": float(pricing.get("prompt") or 0.0),
+                "price_out": float(pricing.get("completion") or 0.0),
             })
 
         max_cap = max((m["capability"] for m in base_stats), default=1)

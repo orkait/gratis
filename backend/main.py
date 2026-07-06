@@ -34,6 +34,9 @@ from providers.cloudflare import (
     get_cloudflare_credentials,
 )
 from providers.intelligence import enrich_with_intelligence
+from providers.scoring import score_models
+from providers.arena import fetch_arena_elo, attach_arena
+from providers.ttl_cache import AsyncTTLCache
 
 load_dotenv()
 
@@ -313,8 +316,7 @@ async def model_get(model_id: str):
 
 # ===== Rankings (extension) =====
 
-@app.get("/v1/rankings")
-async def rankings():
+async def _compute_rankings() -> list[dict]:
     (
         openrouter_stats,
         unified_extra,
@@ -337,7 +339,7 @@ async def rankings():
     extras = ollama_stats + aistudio_stats + groq_stats + cerebras_stats + cloudflare_stats
     all_stats = openrouter_stats + extras
     if not all_stats:
-        return JSONResponse(content=[])
+        return []
 
     max_cap = max((m["capability"] for m in all_stats), default=1)
 
@@ -346,8 +348,29 @@ async def rankings():
 
     rescored_extra = [rescore(m) for m in extras]
     combined = sorted(openrouter_stats + rescored_extra, key=lambda m: m["balanced"], reverse=True)
+    # Attach real AA intelligence FIRST, then the composite scorer — so intelligence actually drives the
+    # ranking (previously it was only decorated on AFTER the crude balanced sort). score_models returns
+    # the list sorted by overall, with per-dimension + task-fit scores + archetype for downstream sorts.
     combined = await enrich_with_intelligence(combined)
-    return JSONResponse(content=combined)
+    combined = score_models(combined)
+    # Overlay the human-preference axis (LMArena Elo) + the benchmark-vs-humans divergence flag — the
+    # honest triangulation the benchmark composite alone can't give. Fail-open (no Elo → no overlay).
+    combined = attach_arena(combined, await fetch_arena_elo())
+    return combined
+
+
+# The full ranking is ~10 external calls (5 provider markets + AA intelligence + LMArena Elo) plus
+# scoring. Cache the assembled result so repeat loads within the TTL are instant and don't re-hammer
+# upstreams. Empty results (all providers down) are not cached, so recovery isn't pinned out. TTL is
+# env-driven; default 1800s (30 min).
+RANKINGS_CACHE_TTL = float(os.getenv("RANKINGS_CACHE_TTL", "1800"))
+_rankings_cache: AsyncTTLCache[list[dict]] = AsyncTTLCache(ttl=RANKINGS_CACHE_TTL)
+
+
+@app.get("/v1/rankings")
+async def rankings():
+    data, hit = await _rankings_cache.get_or_compute(_compute_rankings)
+    return JSONResponse(content=data, headers={"X-Cache": "HIT" if hit else "MISS"})
 
 
 # ===== Health + Root =====
