@@ -198,23 +198,25 @@ function ChatActiveView({ modelId, models }: { modelId: string } & Props) {
 function MessageRow({ role, content }: { role: string; content: string }) {
   const isUser = role === "user";
   return (
-    <div className={cn("flex gap-2", isUser && "flex-row-reverse")}>
+    <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>
       <div
         className={cn(
-          "w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5",
+          "w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
           isUser ? "bg-(--color-accent)" : "bg-(--color-surface-2) border border-(--color-border)",
         )}
       >
-        {isUser ? <User className="w-3.5 h-3.5 text-(--color-accent-fg)" /> : <Bot className="w-3.5 h-3.5 text-(--color-fg-muted)" />}
+        {isUser ? <User className="w-4 h-4 text-(--color-accent-fg)" /> : <Bot className="w-4 h-4 text-(--color-fg-muted)" />}
       </div>
-      <div
-        className={cn(
-          "max-w-[85%] rounded-lg px-4 py-2.5 text-[14px] leading-relaxed",
-          isUser ? "bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap" : "bg-(--color-surface-1) text-(--color-fg)",
-        )}
-      >
-        {isUser ? content : <ChatMarkdown content={content} />}
-      </div>
+      {isUser ? (
+        <div className="max-w-[85%] rounded-[18px] px-4 py-2.5 text-[15px] leading-relaxed bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap">
+          {content}
+        </div>
+      ) : (
+        // Editorial: assistant replies read like prose, not a chat bubble.
+        <div className="max-w-[65ch] min-w-0 pt-1 text-[16px] leading-[1.75] text-(--color-fg)">
+          <ChatMarkdown content={content} />
+        </div>
+      )}
     </div>
   );
 }
@@ -243,7 +245,7 @@ function ChatGreeting({ modelId, onPick }: { modelId: string; onPick: (text: str
         <Sparkles className="w-5 h-5" />
       </div>
       <div>
-        <h2 className="text-[20px] font-semibold tracking-tight">How can I help today?</h2>
+        <h2 className="serif text-[30px] font-semibold">How can I help today?</h2>
         <p className="text-[13px] text-(--color-fg-muted) mt-1">
           Connected to <span className="font-mono text-(--color-fg)">{modelId}</span>
         </p>
@@ -271,7 +273,7 @@ function EmptyState({ models, onPick }: { models: ModelStats[]; onPick: (id: str
       <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--color-accent-soft) text-(--color-accent) mb-4">
         <Sparkles className="w-5 h-5" />
       </div>
-      <h2 className="text-[20px] font-semibold tracking-tight">Pick a model to start</h2>
+      <h2 className="serif text-[30px] font-semibold">Pick a model to start</h2>
       <p className="text-[13px] text-(--color-fg-muted) mt-1 mb-6">300+ free models across 7 providers.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-[640px] w-full">
         {top.map((m) => (

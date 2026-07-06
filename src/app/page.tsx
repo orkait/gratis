@@ -30,7 +30,7 @@ export default function Page() {
   });
 
   return (
-    <div className="flex min-h-dvh bg-(--color-bg) text-(--color-fg)">
+    <div className="theme-editorial flex min-h-dvh bg-(--color-bg) text-(--color-fg)">
       <ChatSidebar />
       <ChatView models={models} />
       <CommandPalette models={models} />
