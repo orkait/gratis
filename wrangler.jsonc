@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gratis",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-12",
+  // Required by @opennextjs/cloudflare: Next needs Node built-ins in the workerd runtime.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // custom_domain makes Cloudflare create and own the DNS record for this hostname.
+  "routes": [{ "pattern": "gratis.orkait.com", "custom_domain": true }],
+  "observability": {
+    "enabled": true
+  }
+}
