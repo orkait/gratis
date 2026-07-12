@@ -37,8 +37,8 @@ export function DetailDrawer({ models }: { models: ModelStats[] }) {
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-(--z-modal-backdrop) bg-black/50 backdrop-blur-[2px] transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 motion-reduce:transition-none" />
-        <Dialog.Popup className="fixed right-0 top-0 z-(--z-modal) flex h-dvh w-full max-w-[440px] flex-col bg-(--color-surface-1) border-l border-(--color-border) shadow-[0_0_60px_rgb(0_0_0_/_0.45)] transition-transform duration-250 ease-out data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full motion-reduce:transition-none focus:outline-none">
+        <Dialog.Backdrop className="fixed inset-0 z-(--z-modal-backdrop) bg-black/50 backdrop-blur-overlay transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 motion-reduce:transition-none" />
+        <Dialog.Popup className="fixed right-0 top-0 z-(--z-modal) flex h-dvh w-full max-w-drawer flex-col bg-(--color-surface-1) border-l border-(--color-border) shadow-drawer transition-transform duration-250 ease-out data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full motion-reduce:transition-none focus:outline-none">
           {model && (
             <>
               <header className="flex items-center justify-between gap-2 px-5 py-4 border-b border-(--color-border) shrink-0">

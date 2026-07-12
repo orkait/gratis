@@ -78,7 +78,7 @@ export function AppShell({
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "h-8 px-3 rounded-md flex items-center gap-2 text-sm transition-colors duration-[120ms]",
+                  "h-8 px-3 rounded-md flex items-center gap-2 text-sm transition-colors duration-120",
                   active
                     ? "bg-(--color-accent-soft) text-(--color-accent) font-medium"
                     : "text-(--color-fg-muted) hover:bg-(--color-surface-1) hover:text-(--color-fg)",
@@ -111,7 +111,7 @@ export function AppShell({
           <button
             type="button"
             onClick={openCmdk}
-            className="flex-1 max-w-md mx-auto h-7 flex items-center gap-2 px-2.5 rounded-md bg-(--color-surface-1) border border-(--color-border) text-(--color-fg-subtle) hover:border-(--color-border-strong) transition-colors duration-[120ms] cursor-pointer"
+            className="flex-1 max-w-md mx-auto h-7 flex items-center gap-2 px-2.5 rounded-md bg-(--color-surface-1) border border-(--color-border) text-(--color-fg-subtle) hover:border-(--color-border-strong) transition-colors duration-120 cursor-pointer"
           >
             <Search className="w-3 h-3" />
             <span className="flex-1 text-left text-sm">Search models, providers, actions...</span>

@@ -10,7 +10,7 @@ export function MarketError({ onRetry, message }: { onRetry: () => void; message
   return (
     <div
       role="alert"
-      className="h-[400px] flex flex-col items-center justify-center gap-3 text-(--color-fg-subtle)"
+      className="h-empty-state flex flex-col items-center justify-center gap-3 text-(--color-fg-subtle)"
     >
       <PlugZap className="w-8 h-8" />
       <div className="text-center">

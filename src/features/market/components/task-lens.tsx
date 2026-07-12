@@ -45,7 +45,7 @@ export function TaskLens() {
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs font-mono uppercase tracking-[0.16em] text-(--color-fg-subtle)">
+        <div className="text-xs font-mono uppercase tracking-eyebrow text-(--color-fg-subtle)">
           What are you building?
         </div>
 

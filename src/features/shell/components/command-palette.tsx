@@ -81,7 +81,7 @@ export function CommandPalette({ models }: { models: ModelStats[] }) {
 
   return (
     <Dialog open={cmdkOpen} onOpenChange={setCmdk}>
-      <DialogContent className="p-0 max-w-[640px] !z-(--z-command) [&~[data-slot='dialog-backdrop']]:!z-(--z-command-backdrop)">
+      <DialogContent className="p-0 max-w-dialog !z-(--z-command) [&~[data-slot='dialog-backdrop']]:!z-(--z-command-backdrop)">
         <Command className={cls.root} loop>
           <CommandInput placeholder="Search models, providers, actions..." className={cls.input} />
           <CommandList className={cls.list}>
@@ -168,7 +168,7 @@ function RecentChatItem({
     >
       <History className="w-3.5 h-3.5" />
       <span className="flex-1 truncate">{thread.title}</span>
-      <span className="text-xs font-mono text-(--color-fg-subtle) truncate max-w-[140px]">
+      <span className="text-xs font-mono text-(--color-fg-subtle) truncate max-w-model-id">
         {thread.modelId}
       </span>
     </CommandItem>

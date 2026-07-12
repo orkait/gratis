@@ -44,12 +44,12 @@ const MessageRow = memo(function MessageRow({
         )}
       </div>
       {isUser ? (
-        <div className="max-w-[85%] rounded-[18px] px-4 py-2.5 text-lg leading-relaxed bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap">
+        <div className="max-w-bubble rounded-2xl px-4 py-2.5 text-lg leading-relaxed bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap">
           {content}
         </div>
       ) : (
         // Editorial: assistant replies read like prose, not a chat bubble.
-        <div className="max-w-[65ch] min-w-0 pt-1 text-lg leading-[1.75] text-(--color-fg)">
+        <div className="max-w-measure min-w-0 pt-1 text-lg leading-prose text-(--color-fg)">
           <ChatMarkdown content={content} />
         </div>
       )}

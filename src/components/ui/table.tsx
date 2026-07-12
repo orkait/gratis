@@ -10,7 +10,7 @@ export function TBody({ className, ...props }: React.HTMLAttributes<HTMLTableSec
   return <tbody data-slot="tbody" {...props} className={className} />;
 }
 export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
-  return <tr data-slot="tr" className={cn("border-b border-(--color-border)/60 hover:bg-white/[0.02] transition-colors duration-[120ms]", className)} {...props} />;
+  return <tr data-slot="tr" className={cn("border-b border-(--color-border)/60 hover:bg-white/[0.02] transition-colors duration-120", className)} {...props} />;
 }
 export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return <th data-slot="th" className={cn("h-9 px-3 text-left align-middle text-xs font-semibold uppercase tracking-wider text-(--color-fg-subtle)", className)} {...props} />;

@@ -4,6 +4,8 @@ import re
 
 import httpx
 
+from providers.params import capability_params, parse_params
+
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_MODEL_PREFIX = "groq/"
 GROQ_PROVIDER_NAME = "Groq"
@@ -22,18 +24,6 @@ def is_groq_model(model_id: str) -> bool:
 def strip_groq_prefix(model_id: str) -> str:
     return model_id[len(GROQ_MODEL_PREFIX):] if is_groq_model(model_id) else model_id
 
-
-def _parse_params(model_id: str) -> float:
-    lower = model_id.lower()
-    m = re.search(r"(\d+(?:\.\d+)?)t\b", lower)
-    if m:
-        return float(m.group(1)) * 1000
-    m = re.search(r"(\d+(?:\.\d+)?)b\b", lower)
-    if m:
-        return float(m.group(1))
-    if "maverick" in lower or "scout" in lower:
-        return 17.0
-    return 1.0
 
 
 def _is_reasoning(model_id: str) -> bool:
@@ -63,8 +53,8 @@ def build_groq_market_stats(raw: list[dict]) -> list[dict]:
     for m in raw:
         slug = m["id"]
         ctx = m.get("context_window") or GROQ_DEFAULT_CTX
-        params = _parse_params(slug)
-        capability = params * math.log10(ctx + 1)
+        params = parse_params(slug)
+        capability = capability_params(params) * math.log10(ctx + 1)
         brain = _is_reasoning(slug)
         result.append({
             "id": f"groq/{slug}",

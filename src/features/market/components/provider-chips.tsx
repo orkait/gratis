@@ -64,7 +64,7 @@ function ProviderChip({
       onClick={handleClick}
       aria-pressed={active}
       className={cn(
-        "h-7 px-2.5 rounded-full flex items-center gap-1.5 text-sm font-medium border whitespace-nowrap transition-colors duration-[120ms] cursor-pointer",
+        "h-7 px-2.5 rounded-full flex items-center gap-1.5 text-sm font-medium border whitespace-nowrap transition-colors duration-120 cursor-pointer",
         tone,
       )}
     >

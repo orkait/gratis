@@ -99,7 +99,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
           type="button"
           onClick={handleCopy}
           className={cn(
-            "h-5 px-1.5 rounded inline-flex items-center gap-1 text-xs font-mono cursor-pointer transition-colors duration-[120ms]",
+            "h-5 px-1.5 rounded inline-flex items-center gap-1 text-xs font-mono cursor-pointer transition-colors duration-120",
             copied
               ? "text-(--color-success)"
               : "text-(--color-fg-muted) hover:text-(--color-fg) hover:bg-(--color-surface-3)",

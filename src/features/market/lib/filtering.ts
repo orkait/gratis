@@ -22,7 +22,9 @@ export function applyFilters(models: readonly ModelStats[], filters: Filters): M
     if (filters.openOnly && !model.open) return false;
     if (filters.brain && !model.brain) return false;
     if (filters.tools && !model.tools) return false;
-    if (filters.minParams > 0 && model.params < filters.minParams) return false;
+    // Unknown size cannot be shown to clear a minimum, so it does not. The alternative - letting
+    // unknowns through a "at least 70B" filter - would quietly answer a question we cannot answer.
+    if (filters.minParams > 0 && (model.params ?? 0) < filters.minParams) return false;
     if (filters.minCtx > 0 && model.ctx < filters.minCtx) return false;
     if (search && !model.id.toLowerCase().includes(search)) return false;
     if (!matchesProvider(model, filters.provider)) return false;

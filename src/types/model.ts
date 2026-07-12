@@ -28,7 +28,9 @@ export type Archetype =
 export type ModelStats = {
   id: string;
   name: string;
-  params: number;
+  /** Billions of parameters, or null when the provider does not publish a size. NEVER fabricate a
+   *  number here: it used to default to 1.0, so Claude Opus and GPT-5 rendered as "1B". */
+  params: number | null;
   ctx: number;
   is_free: boolean;
   capability: number;
@@ -51,6 +53,9 @@ export type ModelStats = {
   archetype?: Archetype;
   badges?: string[];
   bench_count?: number;         // how many community benchmarks (GPQA, LiveCodeBench, tau-bench, ...) grounded the scores
+  /** True when `scores.speed` is a provider-class PRIOR rather than measured throughput. Currently
+   *  true for every model - no provider in the pool reports tps - so speed is not shown as a signal. */
+  speed_est?: boolean;
   consensus?: number | null;    // 0..100 cross-benchmark agreement — low = a contested score, don't take at face value
   confidence?: "high" | "medium" | "low"; // how much to trust this row (bench coverage + agreement + estimate flag)
   // Human-preference axis (LMArena Elo) + where it disagrees with the benchmark composite.

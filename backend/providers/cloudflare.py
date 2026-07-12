@@ -4,6 +4,8 @@ import re
 
 import httpx
 
+from providers.params import capability_params, parse_params
+
 CLOUDFLARE_MODEL_PREFIX = "cloudflare/"
 CLOUDFLARE_PROVIDER_NAME = "Cloudflare Workers AI"
 CLOUDFLARE_TIMEOUT_S = 10.0
@@ -28,13 +30,6 @@ def is_cloudflare_model(model_id: str) -> bool:
 def strip_cloudflare_prefix(model_id: str) -> str:
     return model_id[len(CLOUDFLARE_MODEL_PREFIX):] if is_cloudflare_model(model_id) else model_id
 
-
-def _parse_params(model_id: str) -> float:
-    lower = model_id.lower()
-    m = re.search(r"(\d+(?:\.\d+)?)b\b", lower)
-    if m:
-        return float(m.group(1))
-    return 1.0
 
 
 def _is_reasoning(model_id: str) -> bool:
@@ -66,7 +61,7 @@ def build_cloudflare_market_stats(raw: list[dict]) -> list[dict]:
         slug = m.get("name", "")
         if not slug:
             continue
-        params = _parse_params(slug)
+        params = parse_params(slug)
         ctx = CLOUDFLARE_DEFAULT_CTX
         properties = {p.get("property_id"): p.get("value") for p in m.get("properties", [])}
         ctx_str = properties.get("context_window") or properties.get("max_input_tokens")
@@ -75,7 +70,7 @@ def build_cloudflare_market_stats(raw: list[dict]) -> list[dict]:
                 ctx = int(ctx_str)
             except (ValueError, TypeError):
                 pass
-        capability = params * math.log10(ctx + 1)
+        capability = capability_params(params) * math.log10(ctx + 1)
         brain = _is_reasoning(slug)
         is_beta = m.get("properties") and any(
             p.get("property_id") == "beta" and p.get("value") == "true"

@@ -4,6 +4,8 @@ import re
 
 import httpx
 
+from providers.params import capability_params, parse_params
+
 CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
 CEREBRAS_MODEL_PREFIX = "cerebras/"
 CEREBRAS_PROVIDER_NAME = "Cerebras"
@@ -22,16 +24,6 @@ def is_cerebras_model(model_id: str) -> bool:
 def strip_cerebras_prefix(model_id: str) -> str:
     return model_id[len(CEREBRAS_MODEL_PREFIX):] if is_cerebras_model(model_id) else model_id
 
-
-def _parse_params(model_id: str) -> float:
-    lower = model_id.lower()
-    m = re.search(r"(\d+(?:\.\d+)?)t\b", lower)
-    if m:
-        return float(m.group(1)) * 1000
-    m = re.search(r"(\d+(?:\.\d+)?)b\b", lower)
-    if m:
-        return float(m.group(1))
-    return 1.0
 
 
 def _is_reasoning(model_id: str) -> bool:
@@ -60,9 +52,9 @@ def build_cerebras_market_stats(raw: list[dict]) -> list[dict]:
     result = []
     for m in raw:
         slug = m["id"]
-        params = _parse_params(slug)
+        params = parse_params(slug)
         ctx = CEREBRAS_DEFAULT_CTX
-        capability = params * math.log10(ctx + 1)
+        capability = capability_params(params) * math.log10(ctx + 1)
         brain = _is_reasoning(slug)
         result.append({
             "id": f"cerebras/{slug}",

@@ -6,7 +6,7 @@ export function Input({ className, ...props }: InputProps) {
     <input
       data-slot="input"
       className={cn(
-        "h-8 w-full rounded-md bg-(--color-surface-1) border border-(--color-border) px-2.5 text-sm text-(--color-fg) placeholder:text-(--color-fg-subtle) outline-none transition-colors duration-[120ms] focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent-soft)",
+        "h-8 w-full rounded-md bg-(--color-surface-1) border border-(--color-border) px-2.5 text-sm text-(--color-fg) placeholder:text-(--color-fg-subtle) outline-none transition-colors duration-120 focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent-soft)",
         className,
       )}
       {...props}

@@ -12,45 +12,82 @@ const CONFIDENCE_DOT: Readonly<Record<string, string>> = {
   low: "bg-(--color-warning)",
 };
 
-/** The honesty signals: where the benchmarks and the humans disagree, and how much to trust either. */
 const DIVERGENCE = {
   humanFavored: "human-favored",
   benchFavored: "bench-favored",
 } as const;
 
+/** The model identity cell.
+ *
+ * It used to eat over half the table width to show a name plus a line of prose ("9 benches, 55%
+ * agree") that repeated on every row and told you nothing you could act on. The grounding is now
+ * folded into the confidence dot's tooltip, where it is available but not shouting, and the cell is
+ * a fixed width so the actual signal gets the room.
+ */
 export function ModelCell({ model, showHonesty }: { model: ModelStats; showHonesty: boolean }) {
-  const params = model.params >= 1 ? formatParams(model.params) : "?";
-
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-md bg-(--color-surface-2) border border-(--color-border) flex items-center justify-center text-xs font-mono font-semibold text-(--color-fg-muted) shrink-0">
-        {params}
-      </div>
+    <div className="flex items-center gap-2.5 min-w-0">
+      <ParamBadge params={model.params} />
 
       <div className="min-w-0">
-        <div className="text-sm font-medium truncate flex items-center gap-2">
-          {showHonesty && model.confidence ? <ConfidenceDot confidence={model.confidence} /> : null}
-          <span className="truncate">{displayName(model.id)}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {showHonesty && model.confidence ? <ConfidenceDot model={model} /> : null}
+          <span className="text-sm font-medium truncate">{displayName(model.id)}</span>
           {model.archetype ? <ArchetypeTag archetype={model.archetype} /> : null}
           {showHonesty ? <DivergenceTag model={model} /> : null}
         </div>
 
-        <div className="text-xs text-(--color-fg-subtle) flex items-center gap-1.5">
+        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-(--color-fg-subtle) truncate">
           <ProviderAvatar provider={model.provider} size="xs" />
-          {model.provider}
-          {showHonesty ? <BenchmarkGrounding model={model} /> : null}
+          <span className="truncate">{model.provider}</span>
         </div>
       </div>
     </div>
   );
 }
 
-function ConfidenceDot({ confidence }: { confidence: string }) {
+/** Rendered only when the size is actually known.
+ *
+ * Every row used to show "1B" because the backend defaulted an unparseable size to 1.0 - so Claude
+ * Opus, GPT-5 and Gemini all claimed to be 1B models. An empty slot is honest; a fake number is not.
+ */
+function ParamBadge({ params }: { params: number | null }) {
+  if (params == null) {
+    return <div className="w-9 shrink-0" aria-hidden />;
+  }
+
   return (
-    <InfoTip content={`${confidence} confidence, from benchmark coverage + cross-benchmark agreement`}>
-      <span className={cn("inline-block w-1.5 h-1.5 rounded-full shrink-0", CONFIDENCE_DOT[confidence])} />
+    <div className="w-9 h-7 shrink-0 rounded-md bg-(--color-surface-2) border border-(--color-border) flex items-center justify-center text-2xs font-mono font-semibold text-(--color-fg-muted) tabular-nums">
+      {formatParams(params)}
+    </div>
+  );
+}
+
+/** The benchmark grounding now lives here instead of as a line of prose on every row. */
+function ConfidenceDot({ model }: { model: ModelStats }) {
+  const grounding = groundingText(model);
+
+  return (
+    <InfoTip content={grounding}>
+      <span
+        className={cn(
+          "inline-block w-1.5 h-1.5 rounded-full shrink-0",
+          CONFIDENCE_DOT[model.confidence ?? "medium"],
+        )}
+      />
     </InfoTip>
   );
+}
+
+function groundingText(model: ModelStats): string {
+  const parts = [`${model.confidence} confidence`];
+  if (model.bench_count != null && model.bench_count > 0) {
+    parts.push(`grounded in ${model.bench_count} community benchmarks`);
+  }
+  if (model.consensus != null) {
+    parts.push(`${model.consensus.toFixed(0)}% cross-benchmark agreement (low agreement = a contested score)`);
+  }
+  return parts.join(" · ");
 }
 
 function ArchetypeTag({ archetype }: { archetype: string }) {
@@ -61,7 +98,6 @@ function ArchetypeTag({ archetype }: { archetype: string }) {
   );
 }
 
-/** Two independent early returns instead of two chained conditionals inside the parent's JSX. */
 function DivergenceTag({ model }: { model: ModelStats }) {
   if (model.divergence === DIVERGENCE.humanFavored) {
     return (
@@ -86,22 +122,4 @@ function DivergenceTag({ model }: { model: ModelStats }) {
   }
 
   return null;
-}
-
-function BenchmarkGrounding({ model }: { model: ModelStats }) {
-  if (model.bench_count == null || model.bench_count <= 0) return null;
-
-  const agreement = model.consensus == null ? "" : `, ${model.consensus.toFixed(0)}% agree`;
-  const tip =
-    model.consensus == null
-      ? `Grounded in ${model.bench_count} community benchmarks`
-      : `Grounded in ${model.bench_count} community benchmarks, ${model.consensus.toFixed(0)}% cross-benchmark agreement (low agreement = a contested score)`;
-
-  return (
-    <InfoTip content={tip}>
-      <span className="text-xs font-mono text-(--color-fg-subtle)/70">
-        · {model.bench_count} benches{agreement}
-      </span>
-    </InfoTip>
-  );
 }

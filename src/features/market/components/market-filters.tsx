@@ -67,7 +67,7 @@ type NumberChange = (key: SliderSpec["key"], next: number) => void;
 function FilterToggle({ spec, checked, onToggle }: { spec: ToggleSpec; checked: boolean; onToggle: BooleanToggle }) {
   // Declared above the return and passed by reference - no closure rebuilt per render.
   const handleClick = () => onToggle(spec.key, !checked);
-  const knobPosition = checked ? "translate-x-[15px]" : "translate-x-[3px]";
+  const knobPosition = checked ? "translate-x-toggle-travel" : "translate-x-toggle-inset";
   const trackColor = checked ? "bg-(--color-accent)" : "bg-(--color-surface-3)";
 
   return (
@@ -76,11 +76,11 @@ function FilterToggle({ spec, checked, onToggle }: { spec: ToggleSpec; checked: 
       role="switch"
       aria-checked={checked}
       onClick={handleClick}
-      className="w-full h-8 px-3 rounded-md flex items-center justify-between hover:bg-(--color-surface-1) transition-colors duration-[120ms] cursor-pointer"
+      className="w-full h-8 px-3 rounded-md flex items-center justify-between hover:bg-(--color-surface-1) transition-colors duration-120 cursor-pointer"
     >
       <span className="text-sm text-(--color-fg)">{spec.label}</span>
-      <span className={cn("relative inline-flex h-[18px] w-[30px] items-center rounded-full transition-colors duration-[120ms]", trackColor)}>
-        <span className={cn("inline-block h-3 w-3 rounded-full bg-white transition-transform duration-[120ms]", knobPosition)} />
+      <span className={cn("relative inline-flex h-toggle-thumb w-toggle-track items-center rounded-full transition-colors duration-120", trackColor)}>
+        <span className={cn("inline-block h-3 w-3 rounded-full bg-white transition-transform duration-120", knobPosition)} />
       </span>
     </button>
   );
@@ -98,7 +98,7 @@ function CapabilityChip({ spec, active, onToggle }: { spec: ChipSpec; active: bo
       type="button"
       onClick={handleClick}
       aria-pressed={active}
-      className={cn("h-8 px-2 rounded-md flex items-center justify-center gap-1.5 text-sm font-medium transition-colors duration-[120ms] cursor-pointer border", tone)}
+      className={cn("h-8 px-2 rounded-md flex items-center justify-center gap-1.5 text-sm font-medium transition-colors duration-120 cursor-pointer border", tone)}
     >
       <Icon className="w-3 h-3" />
       {spec.label}

@@ -31,7 +31,7 @@ export function ChatEmptyState({ models }: { models: ModelStats[] }) {
       <p className="text-sm text-(--color-fg-muted) mt-1 mb-6">
         300+ free models across 7 providers.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-[640px] w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-dialog w-full">
         {suggested.map((model) => (
           <ModelChoice key={model.id} model={model} onPick={handlePick} />
         ))}
@@ -60,7 +60,7 @@ const ModelChoice = memo(function ModelChoice({
     <button
       type="button"
       onClick={handleClick}
-      className="text-left text-sm bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-[120ms]"
+      className="text-left text-sm bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-120"
     >
       <div className="font-mono text-(--color-fg) truncate">{model.id}</div>
       <div className="text-xs text-(--color-fg-subtle) mt-0.5">
