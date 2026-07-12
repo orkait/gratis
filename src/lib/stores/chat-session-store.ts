@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { getBrowserStorage } from "./storage";
 
-const FALLBACK_MODEL = "zero-cost-intelligent";
+const FALLBACK_MODEL = "gratis-auto";
 
 /** Which conversation the chat view is pointed at. Thread *data* lives in React Query / idb. */
 type ChatSessionState = {

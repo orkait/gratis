@@ -24,6 +24,8 @@ interface ChatSchema extends DBSchema {
   };
 }
 
+// Deliberately NOT renamed with the product. This is the IndexedDB name: changing it points the app
+// at a fresh empty database and orphans every existing user's chat history. The name is invisible.
 const DB_NAME = "zerocostllm-chat";
 const DB_VERSION = 1;
 

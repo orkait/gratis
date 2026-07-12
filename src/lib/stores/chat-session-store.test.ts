@@ -30,7 +30,7 @@ describe("chat-session-store", () => {
 
     reset();
     useChatSessionStore.getState().startNewChat();
-    expect(useChatSessionStore.getState().chatModelId).toBe("zero-cost-intelligent");
+    expect(useChatSessionStore.getState().chatModelId).toBe("gratis-auto");
   });
 
   it("setCurrentThreadId does not touch chatModelId", () => {

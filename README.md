@@ -1,6 +1,6 @@
 <div align="center">
 
-# ZeroCostLLM
+# Gratis
 
 ### Every free LLM, behind one OpenAI-compatible endpoint.
 
@@ -23,12 +23,12 @@
 
 Free LLM tiers are everywhere and nobody can keep track of them. Six providers, hundreds of models, wildly uneven quality, and a catalogue that rots weekly as models get retired or moved behind a paid plan.
 
-ZeroCostLLM does two things about that. It **proxies** every free tier behind one OpenAI-compatible API, so your existing code keeps working and stops costing money. And it **ranks** them, so you know which free model is genuinely good instead of just genuinely free.
+Gratis does two things about that. It **proxies** every free tier behind one OpenAI-compatible API, so your existing code keeps working and stops costing money. And it **ranks** them, so you know which free model is genuinely good instead of just genuinely free.
 
 ## ⚡ Quick start
 
 ```bash
-git clone https://github.com/orkait/zerocostllm && cd zerocostllm
+git clone https://github.com/orkait/gratis && cd gratis
 cp .env.local.example .env.local   # add whichever provider keys you have
 bun install
 python dev.py                      # backend :8000, UI :3000
@@ -39,10 +39,12 @@ Every key is optional. Providers you have no key for are skipped, and the rest s
 ```bash
 curl localhost:8000/v1/chat/completions \
   -H 'Content-Type: application/json' \
-  -d '{"model": "zero-cost-intelligent", "messages": [{"role": "user", "content": "hi"}]}'
+  -d '{"model": "gratis-auto", "messages": [{"role": "user", "content": "hi"}]}'
 ```
 
-`zero-cost-intelligent` is the point of the whole thing: you do not name a model, and it picks the most capable free one available right now.
+`gratis-auto` is the point of the whole thing: you do not name a model, and it picks the most capable free one available right now.
+
+> Formerly `zero-cost-intelligent`. That id still works and always will.
 
 ## 🎯 What you get
 
@@ -50,7 +52,7 @@ curl localhost:8000/v1/chat/completions \
 |---|---|
 | 🔌 **Drop-in OpenAI API** | `/v1/chat/completions`, `/v1/embeddings`, `/v1/models`. Streaming included. Change the base URL, change nothing else. |
 | 🎭 **Paid names route to free models** | Send `gpt-4o`, get Llama 3.3 70B on Groq. Your code does not know the difference. |
-| 🧠 **Pick-for-me routing** | `zero-cost-intelligent` selects the strongest free model at request time. |
+| 🧠 **Pick-for-me routing** | `gratis-auto` selects the strongest free model at request time. |
 | 📊 **A real market, not a list** | Models scored on benchmarks, [Artificial Analysis](https://artificialanalysis.ai) intelligence and LMArena Elo, with task lenses for coding, agents, reasoning, price and speed. |
 | 🧹 **Dead models remove themselves** | Every listed model has actually answered. Nothing is hand-maintained. |
 
@@ -58,7 +60,7 @@ curl localhost:8000/v1/chat/completions \
 
 Most "free LLM" lists are a lie within a month. Models get retired, moved behind a paid plan, or gated behind an agreement, and the list keeps advertising them.
 
-ZeroCostLLM keeps no list. A model earns its place by answering:
+Gratis keeps no list. A model earns its place by answering:
 
 ```
 a call fails

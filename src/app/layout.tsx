@@ -9,7 +9,7 @@ const lora = Lora({ subsets: ["latin"], variable: "--font-lora", display: "swap"
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "ZeroCostLLM - Free LLM Market",
+  title: "Gratis - Free LLM Market",
   description: "Real-time market intelligence for free LLM models across 7 providers.",
 };
 
