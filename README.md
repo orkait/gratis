@@ -30,14 +30,38 @@ Gratis does two things about that. It **proxies** every free tier behind one Ope
 ```bash
 git clone https://github.com/orkait/gratis && cd gratis
 cp .env.local.example .env.local   # add whichever provider keys you have
-bun install
-python dev.py                      # backend :8000, UI :3000
+python dev.py                      # backend :3460, UI :3470
 ```
 
-Every key is optional. Providers you have no key for are skipped, and the rest still work.
+`dev.py` is the whole local stack. It installs deps (`bun install`, `uv sync`), loads `.env.local`, starts both servers with interleaved logs, and shuts them down together on Ctrl+C. Every key is optional: providers you have no key for are skipped, and the rest still work.
+
+<details>
+<summary><b>🛠️ All dev.py commands</b></summary>
+
+| Command | What it does |
+|---|---|
+| `python dev.py` | backend `:3460` + UI `:3470` |
+| `python dev.py backend` | backend only |
+| `python dev.py ui` | UI only |
+| `python dev.py test` | vitest + pytest (`test ui` / `test backend` to narrow) |
+| `python dev.py lint` | eslint |
+| `python dev.py build` | next build |
+| `python dev.py docker up` | docker compose up --build (`--minimal` for the 256MB backend-only image) |
+| `python dev.py docker down` | stop the compose stack (`logs`, `ps` also work) |
+
+| Flag | What it does |
+|---|---|
+| `--env NAME` | load `.env.NAME` instead of `.env.local` |
+| `--no-install` | skip the dep install, for fast restarts |
+| `--backend-port N`, `--ui-port N` | move a service off its default port |
+| `--force-port` | kill whatever holds the port, even if it is not Gratis |
+
+If a port is held by something outside this repo, `dev.py` names the process and stops rather than killing it.
+
+</details>
 
 ```bash
-curl localhost:8000/v1/chat/completions \
+curl localhost:3460/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{"model": "gratis-auto", "messages": [{"role": "user", "content": "hi"}]}'
 ```
@@ -110,7 +134,7 @@ Bring whatever keys you have. Six are routed directly, and OpenRouter fans out t
 
 | Variable | Default | What it does |
 |---|---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8000` | Where the UI finds the backend. |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:3460` | Where the UI finds the backend. |
 | `NEXT_PUBLIC_RANKINGS_STALE_MS` | `1800000` | Client cache window, mirrors the backend TTL. |
 | `BACKEND_URL` | falls back to the public URL | Server-side base for the chat route. |
 
@@ -166,7 +190,7 @@ Send an OpenAI or Anthropic model name and it is transparently routed to a free 
 
 | Command | What it does |
 |---|---|
-| `python dev.py` | Backend on `:8000`, UI on `:3000`, logs interleaved |
+| `python dev.py` | Backend on `:3460`, UI on `:3470`, logs interleaved |
 | `bun run dev` | UI only |
 | `bun run test` | Frontend tests (Vitest) |
 | `cd backend && uv run pytest providers` | Backend tests |
