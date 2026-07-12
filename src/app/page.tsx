@@ -1,40 +1,34 @@
 "use client";
-import { useState } from "react";
-import { useUIStore } from "@/lib/stores/ui-store";
-import { useChatSessionStore } from "@/lib/stores/chat-session-store";
-import { useRankings } from "@/lib/query/rankings";
-import { useGlobalHotkeys } from "@/lib/use-global-hotkeys";
-import { ChatSidebar } from "@/components/app/chat-sidebar";
-import { ChatView } from "@/components/app/chat-view";
-import { CommandPalette } from "@/components/app/command-palette";
-import { HelpSheet } from "@/components/app/help-sheet";
+import { useChatSessionStore } from "@/stores/chat-session-store";
+import { useRankings } from "@/features/market/api-rankings";
+import { AppShell, ShellStatus } from "@/features/shell/components/app-shell";
+import { ShellOverlays } from "@/features/shell/components/shell-overlays";
+import { useShellOverlays } from "@/features/shell/hooks/use-shell-overlays";
+import { ChatThreads } from "@/features/chat/components/chat-threads";
+import { ChatView } from "@/features/chat/components/chat-view";
+import { useChatHotkeys } from "@/features/chat/hooks/use-chat-hotkeys";
 
-export default function Page() {
-  const { setCmdk, cmdkOpen } = useUIStore();
-  const { startNewChat } = useChatSessionStore();
+/** The chat, in the same shell as the market: same sidebar, same header, same command palette. Only
+ *  the sidebar panel (conversations instead of filters) and the content differ. */
+export default function ChatPage() {
+  const chatModelId = useChatSessionStore((state) => state.chatModelId);
   const { data: models = [] } = useRankings();
-  const [helpOpen, setHelpOpen] = useState(false);
+  const { helpOpen, openHelp, closeHelp } = useShellOverlays();
 
-  useGlobalHotkeys({
-    "cmdk.toggle": () => setCmdk(!cmdkOpen),
-    "search.focus": () => {
-      const el = document.querySelector<HTMLInputElement>('aside input[placeholder="Search chats..."]');
-      el?.focus();
-    },
-    "chat.new": () => startNewChat(),
-    "overlay.close": () => {
-      if (cmdkOpen) setCmdk(false);
-      else if (helpOpen) setHelpOpen(false);
-    },
-    "help.toggle": () => setHelpOpen((v) => !v),
-  });
+  useChatHotkeys();
 
   return (
-    <div className="theme-editorial flex min-h-dvh bg-(--color-bg) text-(--color-fg)">
-      <ChatSidebar />
+    <AppShell
+      title="Chat"
+      meta={chatModelId ?? undefined}
+      panel={<ChatThreads />}
+      actions={<ShellStatus onHelpClick={openHelp} />}
+      width="prose"
+      // The chat owns its own vertical rhythm: the transcript scrolls, the composer stays put.
+      padded={false}
+    >
       <ChatView models={models} />
-      <CommandPalette models={models} />
-      <HelpSheet open={helpOpen} onClose={() => setHelpOpen(false)} />
-    </div>
+      <ShellOverlays helpOpen={helpOpen} onCloseHelp={closeHelp} />
+    </AppShell>
   );
 }

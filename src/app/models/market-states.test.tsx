@@ -7,9 +7,13 @@ import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import axios from "axios";
 import ModelsPage from "./page";
+import { ROUTES } from "@/config/routes";
 
 vi.mock("axios");
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => ROUTES.market, // AppShell highlights the active nav link
+}));
 
 beforeEach(() => {
   global.ResizeObserver ||= class { observe() {} unobserve() {} disconnect() {} };

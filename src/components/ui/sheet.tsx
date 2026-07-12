@@ -14,11 +14,11 @@ export function SheetContent({ className, side = "right", children, ...props }: 
     : "bottom-0 left-0 right-0 max-h-[90dvh] data-[starting-style]:translate-y-full data-[ending-style]:translate-y-full";
   return (
     <Base.Portal>
-      <Base.Backdrop className="fixed inset-0 z-[1040] bg-black/50 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 transition-opacity duration-[180ms]" />
+      <Base.Backdrop className="fixed inset-0 z-(--z-modal-backdrop) bg-black/50 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 transition-opacity duration-[180ms]" />
       <Base.Popup
         data-slot="sheet-content"
         className={cn(
-          "fixed z-[1040] bg-(--color-surface-1) border-(--color-border) flex flex-col transition-transform duration-[240ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "fixed z-(--z-modal) bg-(--color-surface-1) border-(--color-border) flex flex-col transition-transform duration-[240ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
           side === "right" ? "border-l" : "border-t rounded-t-xl",
           sideClasses,
           className,

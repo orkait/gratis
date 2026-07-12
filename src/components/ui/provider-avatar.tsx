@@ -2,6 +2,9 @@ import { cn } from "@/lib/utils";
 
 const PROVIDER_VAR: Record<string, string> = {
   "Ollama": "var(--color-provider-ollama)",
+  // The rankings feed says "Ollama"; the provider registry's label is "Ollama Cloud". Both are the
+  // same provider and must take the same brand colour, not a hashed fallback hue.
+  "Ollama Cloud": "var(--color-provider-ollama)",
   "Google AI Studio": "var(--color-provider-aistudio)",
   "Groq": "var(--color-provider-groq)",
   "Cerebras": "var(--color-provider-cerebras)",
@@ -10,6 +13,13 @@ const PROVIDER_VAR: Record<string, string> = {
 };
 
 const FALLBACK_HUES = [340, 25, 60, 95, 130, 175, 210, 250, 290, 315];
+
+/** Lookup instead of a nested ternary: a new size is a new entry, not another `? :`. */
+const SIZE_CLASS = {
+  xs: "w-3.5 h-3.5 text-2xs",
+  sm: "w-4 h-4 text-2xs",
+  md: "w-5 h-5 text-xs",
+} as const;
 
 function colorForProvider(provider: string): string {
   if (PROVIDER_VAR[provider]) return PROVIDER_VAR[provider];
@@ -33,7 +43,7 @@ export type ProviderAvatarProps = {
 };
 
 export function ProviderAvatar({ provider, size = "sm", className }: ProviderAvatarProps) {
-  const sizeClass = size === "xs" ? "w-3.5 h-3.5 text-[8px]" : size === "sm" ? "w-4 h-4 text-[9px]" : "w-5 h-5 text-[10px]";
+  const sizeClass = SIZE_CLASS[size];
   return (
     <span
       data-slot="provider-avatar"
