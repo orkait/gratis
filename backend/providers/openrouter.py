@@ -5,6 +5,7 @@ from typing import TypedDict
 import httpx
 
 from providers.params import capability_params, parse_params
+from providers.authors import author_from_model_id
 
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
 MODELS_DEV_URL = "https://models.dev/api.json"
@@ -97,12 +98,26 @@ async def _enrich_with_metrics(client: httpx.AsyncClient, stats: list[ModelStats
 
     metrics = await asyncio.gather(*[fetch_one(m) for m in stats])
 
+    # `provider` is the ROUTE - how you actually call the model - and for everything here that is
+    # OpenRouter. It used to be overwritten with the upstream ENDPOINT HOST that OpenRouter happened
+    # to rank best at that moment, which was wrong twice over:
+    #
+    #   1. it is not the author. claude-fable-5 rendered as "Google", and claude-opus-4.8 as "Google"
+    #      while claude-opus-4.8-fast rendered as "Anthropic" - the same family, three vendors.
+    #   2. it is not stable. The best endpoint changes between refreshes, so the same model showed
+    #      Amazon Bedrock one minute and Google the next.
+    #
+    # It also silently contradicted our own provider filter, which classifies all of these as
+    # OpenRouter. The host is still useful (it is who physically serves the request), so it is kept
+    # as `host` for the detail drawer - it is just no longer allowed to impersonate the provider.
     return [
         {
             **m,
             "tps": met["tps"],
             "uptime": met["uptime"],
-            "provider": met["provider"] or OPENROUTER_PROVIDER_NAME,
+            "provider": OPENROUTER_PROVIDER_NAME,
+            "host": met["provider"],
+            "author": author_from_model_id(m["id"]),
         }
         for m, met in zip(stats, metrics)
     ]
