@@ -50,3 +50,6 @@ __pycache__/
 *.pyc
 backend/.venv/
 backend/.env
+
+# runtime model-availability verdicts (learned, not maintained)
+backend/availability.db
