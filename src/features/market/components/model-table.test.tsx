@@ -18,6 +18,9 @@ describe("applyFilters", () => {
 
   it("filters by provider=ollama matching by provider field", () => {
     const models = [M({ id: "a", provider: "Ollama" }), M({ id: "b", provider: "Groq" })];
+    // The market now defaults to free-only. This test isolates the PROVIDER filter, so opt out of
+    // the tier filter explicitly rather than leaning on whatever the default happens to be.
+    useFiltersStore.getState().setFilter("freeOnly", false);
     useFiltersStore.getState().setFilter("provider", "ollama");
     expect(applyFilters(models, useFiltersStore.getState().filters).map((m) => m.id)).toEqual(["a"]);
   });
@@ -30,6 +33,8 @@ describe("applyFilters", () => {
 
   it("search matches model id substring case-insensitive", () => {
     const models = [M({ id: "groq/llama-3" }), M({ id: "openai/gpt-4" })];
+    // Isolates SEARCH; the free-only default would otherwise exclude these paid fixtures.
+    useFiltersStore.getState().setFilter("freeOnly", false);
     useFiltersStore.getState().setFilter("search", "LLAMA");
     expect(applyFilters(models, useFiltersStore.getState().filters).map((m) => m.id)).toEqual(["groq/llama-3"]);
   });

@@ -8,6 +8,9 @@ export type LensSpec = {
   readonly label: string;
   readonly hint: string;
   readonly icon: LucideIcon;
+  /** Set when the lens ranks on INFERRED data rather than measurements. The UI must say so: a
+   *  ranking presented without qualification is a claim, and this one cannot be backed. */
+  readonly estimated?: string;
 };
 
 export const LENSES: readonly LensSpec[] = [
@@ -16,7 +19,15 @@ export const LENSES: readonly LensSpec[] = [
   { id: "agent", label: "Agents & tools", hint: "τ-bench · tool-use", icon: Wrench },
   { id: "reasoning", label: "Reasoning", hint: "GPQA · HLE", icon: Brain },
   { id: "budget", label: "Cheapest good", hint: "value per dollar", icon: Coins },
-  { id: "fast", label: "Fastest", hint: "throughput", icon: Zap },
+  {
+    id: "fast",
+    label: "Fastest",
+    hint: "throughput",
+    icon: Zap,
+    // No provider in the pool reports tps - speed_est is true for every single model - so this
+    // ranks on a provider-class prior (Groq/Cerebras are fast by architecture), not on measurement.
+    estimated: "No provider reports measured throughput. This ranks on a provider-class estimate, not a measurement.",
+  },
 ];
 
 export type ViewSpec = {

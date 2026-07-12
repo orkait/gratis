@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "./theme-toggle";
 import { ErrorBoundary } from "./error-boundary";
+import { VaultIndicator } from "@/features/vault/components/vault-indicator";
 import { cn } from "@/lib/utils";
 
 /** ONE shell for every surface.
@@ -121,6 +122,7 @@ export function AppShell({
           </button>
 
           <div className="flex items-center gap-1 shrink-0">
+            <VaultIndicator />
             {actions}
             <ThemeToggle />
           </div>
