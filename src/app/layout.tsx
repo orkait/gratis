@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // suppressHydrationWarning is required: next-themes stamps data-theme on <html> before React
+    // hydrates, so the server and client markup legitimately differ on that attribute.
     <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable} ${lora.variable} ${jakarta.variable}`}>
       <body><Providers>{children}</Providers></body>
     </html>
