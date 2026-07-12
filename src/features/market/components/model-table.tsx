@@ -61,12 +61,12 @@ function DecisionTable({ rows, start, metricKey }: { rows: ModelStats[]; start: 
           absorbing every spare pixel. */}
       <THead>
         <TR className="hover:bg-transparent">
-          <TH className="w-10 text-right pr-3 font-mono text-xs">#</TH>
+          <TH className="w-col-rank text-right pr-3 font-mono text-xs">#</TH>
           <TH className="w-col-model">Model</TH>
           <TH className="w-col-score">{labelFor(metricKey)}</TH>
           <TH>Signals</TH>
           <TH className="w-col-cost text-right">Cost</TH>
-          <TH className="w-12" />
+          <TH className="w-col-action" />
         </TR>
       </THead>
       <TBody>
