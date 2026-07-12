@@ -8,10 +8,17 @@ CLOUDFLARE_MODEL_PREFIX = "cloudflare/"
 CLOUDFLARE_PROVIDER_NAME = "Cloudflare Workers AI"
 CLOUDFLARE_TIMEOUT_S = 10.0
 CLOUDFLARE_DEFAULT_CTX = 8_192
+CLOUDFLARE_API_BASE = os.getenv("CLOUDFLARE_API_BASE", "https://api.cloudflare.com/client/v4")
 
 
 def get_cloudflare_credentials() -> tuple[str, str]:
     return os.getenv("CLOUDFLARE_API_KEY", ""), os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
+
+
+def cloudflare_openai_base(account_id: str) -> str:
+    """OpenAI-compatible route. litellm's native cloudflare/ provider reads
+    result["response"], which newer Workers AI models no longer return."""
+    return f"{CLOUDFLARE_API_BASE}/accounts/{account_id}/ai/v1"
 
 
 def is_cloudflare_model(model_id: str) -> bool:
@@ -41,7 +48,7 @@ async def fetch_cloudflare_models() -> list[dict]:
     try:
         async with httpx.AsyncClient() as client:
             r = await client.get(
-                f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/models/search",
+                f"{CLOUDFLARE_API_BASE}/accounts/{account_id}/ai/models/search",
                 headers={"Authorization": f"Bearer {api_key}"},
                 params={"task": "Text Generation", "per_page": 100},
                 timeout=CLOUDFLARE_TIMEOUT_S,

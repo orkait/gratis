@@ -32,11 +32,20 @@ from providers.cloudflare import (
     is_cloudflare_model,
     strip_cloudflare_prefix,
     get_cloudflare_credentials,
+    cloudflare_openai_base,
 )
 from providers.intelligence import enrich_with_intelligence
 from providers.scoring import score_models
 from providers.arena import fetch_arena_elo, attach_arena
 from providers.ttl_cache import AsyncTTLCache
+from providers.availability import (
+    PROBE_INTERVAL,
+    AvailabilityStore,
+    filter_available,
+    pick_unverified,
+    probe_models,
+    record_call_failure,
+)
 
 load_dotenv()
 
@@ -85,9 +94,47 @@ litellm.drop_params = True
 litellm.set_verbose = False
 
 
+availability = AvailabilityStore()
+
+
+async def _probe_one(model_id: str) -> None:
+    """Cheapest call that still proves the model answers. Raises on failure - the caller classifies."""
+    litellm_model, extra = resolve_model(model_id)
+    await litellm.acompletion(
+        model=litellm_model,
+        messages=[{"role": "user", "content": "hi"}],
+        max_tokens=1,
+        stream=False,
+        **extra,
+    )
+
+
+async def _probe_sweep() -> None:
+    """Verify free models nobody has exercised yet, so the market converges without user pain.
+
+    Never blocks a request: the market is served from cache while this runs behind it. Verdicts land
+    in the store and take effect on the next read.
+    """
+    while True:
+        try:
+            models, _ = await _rankings_cache.get_or_compute(_compute_rankings)
+            targets = pick_unverified(models, availability)
+            if targets:
+                verdicts = await probe_models(targets, _probe_one, availability)
+                gone = [m for m, v in verdicts.items() if v == "unavailable"]
+                print(f"availability: probed {len(targets)}, quarantined {len(gone)}")
+        except Exception as e:  # a broken sweep must never take the API down
+            print(f"availability sweep error: {e}")
+        await asyncio.sleep(PROBE_INTERVAL)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    yield
+    sweep = asyncio.create_task(_probe_sweep())
+    try:
+        yield
+    finally:
+        sweep.cancel()
 
 
 app = FastAPI(title="ZeroCostLLM", version="1.0.0", lifespan=lifespan)
@@ -169,7 +216,10 @@ def resolve_model(model_id: str) -> tuple[str, dict[str, Any]]:
     if is_cloudflare_model(model_id):
         slug = strip_cloudflare_prefix(model_id)
         api_key, account_id = get_cloudflare_credentials()
-        return f"cloudflare/{slug}", {"api_key": api_key, "account_id": account_id}
+        return f"openai/{slug}", {
+            "api_base": cloudflare_openai_base(account_id),
+            "api_key": api_key,
+        }
 
     if model_id.startswith("ollama/"):
         slug = model_id[len("ollama/"):]
@@ -264,6 +314,7 @@ async def chat_completions(request: Request) -> Any:
         raise
     except Exception as e:
         status = getattr(e, "status_code", 500) or 500
+        record_call_failure(availability, model_id, status, str(e))
         raise HTTPException(status_code=status, detail=str(e))
 
 
@@ -294,6 +345,7 @@ async def embeddings(request: Request) -> Any:
         raise
     except Exception as e:
         status = getattr(e, "status_code", 500) or 500
+        record_call_failure(availability, model_id, status, str(e))
         raise HTTPException(status_code=status, detail=str(e))
 
 
@@ -302,6 +354,7 @@ async def embeddings(request: Request) -> Any:
 @app.get("/v1/models", dependencies=[Depends(require_auth)])
 async def models():
     result = await fetch_unified_models()
+    result["data"] = filter_available(result.get("data", []), availability)
     return JSONResponse(content=result)
 
 
@@ -370,7 +423,12 @@ _rankings_cache: AsyncTTLCache[list[dict]] = AsyncTTLCache(ttl=RANKINGS_CACHE_TT
 @app.get("/v1/rankings")
 async def rankings():
     data, hit = await _rankings_cache.get_or_compute(_compute_rankings)
-    return JSONResponse(content=data, headers={"X-Cache": "HIT" if hit else "MISS"})
+    # Filtered on read, not inside the cached compute: a quarantine then takes effect on the next
+    # request instead of waiting out the 30-min TTL, and the prober still sees the full catalogue.
+    return JSONResponse(
+        content=filter_available(data, availability),
+        headers={"X-Cache": "HIT" if hit else "MISS"},
+    )
 
 
 # ===== Health + Root =====
