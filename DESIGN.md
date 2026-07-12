@@ -1,8 +1,8 @@
-# DESIGN.md — ZeroCostLLM Dashboard
+# DESIGN.md - Gratis Dashboard
 
 ## 1. Visual Theme & Atmosphere
 
-**Product:** ZeroCostLLM — real-time market intelligence for free LLM models across 7 providers (OpenRouter, Ollama Cloud, Cerebras, Groq, Cloudflare Workers AI, Google AI Studio, +). OpenAI-compatible proxy.
+**Product:** Gratis - real-time market intelligence for free LLM models across 7 providers (OpenRouter, Ollama Cloud, Cerebras, Groq, Cloudflare Workers AI, Google AI Studio, +). OpenAI-compatible proxy.
 
 **Personality:** **premium-precision** (Linear-inspired) with technical-developer density.
 

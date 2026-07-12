@@ -21,7 +21,7 @@ export function Sidebar() {
         <div className="w-6 h-6 rounded-md bg-(--color-accent) flex items-center justify-center">
           <Zap className="w-3.5 h-3.5 text-(--color-accent-fg)" strokeWidth={2.5} />
         </div>
-        <span className="text-[14px] font-semibold tracking-tight">ZeroCostLLM</span>
+        <span className="text-[14px] font-semibold tracking-tight">Gratis</span>
       </div>
 
       <div className="flex-1 overflow-auto p-3 space-y-5">

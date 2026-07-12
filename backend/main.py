@@ -56,6 +56,11 @@ LOCAL_API_KEY = os.getenv("LOCAL_API_KEY", "")
 FALLBACK_MODEL = "groq/llama-3.3-70b-versatile"
 OLLAMA_CLOUD_BASE = "https://ollama.com/v1"
 
+# "Pick the best free model for me". `zero-cost-intelligent` is the pre-Gratis name and is kept
+# permanently: it is a public API id, and it also sits in users' persisted client state.
+POOL_MODEL_ID = "gratis-auto"
+POOL_MODEL_IDS = {POOL_MODEL_ID, "zero-cost-intelligent"}
+
 # Model alias map: clients sending OpenAI/Anthropic names get routed to free equivalents.
 # Override with MODEL_ALIASES env (JSON object).
 DEFAULT_ALIASES: dict[str, str] = {
@@ -137,7 +142,7 @@ async def lifespan(app: FastAPI):
         sweep.cancel()
 
 
-app = FastAPI(title="ZeroCostLLM", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Gratis", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -255,7 +260,7 @@ async def pick_best_free_model() -> str:
 async def chat_completions(request: Request) -> Any:
     body = await request.json()
     model_id: str = body.get("model", "")
-    is_pool = not model_id or model_id == "zero-cost-intelligent"
+    is_pool = not model_id or model_id in POOL_MODEL_IDS
 
     if is_pool:
         model_id = await pick_best_free_model()
@@ -441,7 +446,7 @@ async def health():
 @app.get("/")
 async def root():
     return {
-        "name": "ZeroCostLLM",
+        "name": "Gratis",
         "version": "1.0.0",
         "compat": "openai",
         "auth": "required" if LOCAL_API_KEY else "none",
