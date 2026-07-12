@@ -9,6 +9,8 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  // custom_domain makes Cloudflare create and own the DNS record for this hostname.
+  "routes": [{ "pattern": "gratis.orkait.com", "custom_domain": true }],
   "observability": {
     "enabled": true
   }
