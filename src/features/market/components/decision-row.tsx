@@ -53,7 +53,7 @@ export const DecisionRow = memo(function DecisionRow({
       onKeyDown={handleKeyDown}
       className={cn("cursor-pointer", active && "bg-(--color-accent-soft) border-l-2 border-l-(--color-accent)")}
     >
-      <TD className="w-10 text-right pr-3 font-mono text-xs text-(--color-fg-subtle) tabular-nums">{rank}</TD>
+      <TD className="w-col-rank text-right pr-3 font-mono text-xs text-(--color-fg-subtle) tabular-nums">{rank}</TD>
 
       <TD className="w-col-model max-w-col-model">
         <ModelCell model={model} showHonesty />
@@ -61,16 +61,17 @@ export const DecisionRow = memo(function DecisionRow({
 
       <TD className="w-col-score">
         <div className="flex items-center gap-2.5">
-          <span className="w-8 shrink-0 text-right text-xl leading-none font-semibold tabular-nums text-(--color-accent)">
+          <span className="w-score-num shrink-0 text-right text-xl leading-none font-semibold tabular-nums text-(--color-accent)">
             {formatScore(headline)}
           </span>
           <ScoreBar value={headline} />
         </div>
       </TD>
 
-      {/* The signals get the width the model name and two dead columns used to waste. */}
+      {/* Fixed width with meters that FILL it. When this column was the flexible one, its capped
+          meters left ~680px of dead space between the last bar and the Cost column. */}
       <TD>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           {DECISION_SIGNALS.map((signal) => (
             <SignalMeter key={signal.key} label={signal.label} value={scoreOf(model, signal.key)} />
           ))}
@@ -88,7 +89,7 @@ export const DecisionRow = memo(function DecisionRow({
         </span>
       </TD>
 
-      <TD className="w-12 text-center">
+      <TD className="w-col-action text-center">
         <Button variant="ghost" size="icon" onClick={handleChat} aria-label="Open chat">
           <MessageSquare className="w-3.5 h-3.5" />
         </Button>
@@ -104,7 +105,7 @@ function formatScore(value: number | undefined): string {
 
 function SignalMeter({ label, value }: { label: string; value: number | undefined }) {
   return (
-    <div className="flex-1 min-w-signal-min max-w-signal-max">
+    <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between mb-1">
         <span className="text-2xs font-mono uppercase tracking-wide text-(--color-fg-subtle)/70">{label}</span>
         <span className="text-2xs font-mono tabular-nums text-(--color-fg-muted)">{formatScore(value)}</span>

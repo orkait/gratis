@@ -110,3 +110,70 @@ describe("layout tokens are registered", () => {
     expect(css).toMatch(/--color-accent-hover:/);
   });
 });
+
+
+describe("the market table has no dead space", () => {
+  /** Dead space is not a layout, it is an unallocated remainder. The table's fixed columns plus the
+   * container must leave a sane amount for the ONE flexible column (signals), whose meters fill it.
+   *
+   * This has now been wrong twice, in both directions:
+   *   - signals flexible + meters capped at 120px  -> ~680px pooled between the bars and Cost
+   *   - model flexible                              -> ~500px pooled inside the model cell
+   */
+  const px = (name: string): number => {
+    const m = css.match(new RegExp(`--spacing-${name}:\\s*([\\d.]+)rem`));
+    if (!m) throw new Error(`--spacing-${name} is not defined`);
+    return Number(m[1]) * 16;
+  };
+
+  const containerPx = (): number => {
+    const m = css.match(/--width-market:\s*(\d+)px/);
+    if (!m) throw new Error("--width-market is not defined");
+    return Number(m[1]);
+  };
+
+  const FIXED = ["col-rank", "col-model", "col-score", "col-cost", "col-action"];
+  const SIGNAL_COUNT = 3;
+  const MIN_METER = 90; // narrower than this and a labelled bar stops being readable
+  const MAX_METER = 240; // wider than this and it is padding wearing a bar costume
+
+  it("the fixed columns fit inside the container", () => {
+    const fixed = FIXED.reduce((sum, name) => sum + px(name), 0);
+    expect(fixed).toBeLessThan(containerPx());
+  });
+
+  it("what is left over makes readable bars, not a dead pool", () => {
+    const fixed = FIXED.reduce((sum, name) => sum + px(name), 0);
+    const slack = containerPx() - fixed - 40; // cell padding
+    const perMeter = slack / SIGNAL_COUNT;
+
+    expect(perMeter).toBeGreaterThan(MIN_METER);
+    expect(perMeter).toBeLessThan(MAX_METER);
+  });
+
+  it("the model column is wide enough to stop truncating model names", () => {
+    // "claude-opus-4.8-fast" + a FLAGSHIP badge + a provider row underneath.
+    expect(px("col-model")).toBeGreaterThanOrEqual(380);
+  });
+});
+
+
+describe("radius scale", () => {
+  const radius = (name: string): number => {
+    const m = css.match(new RegExp(`--radius-${name}:\\s*(\\d+)px`));
+    if (!m) throw new Error(`--radius-${name} is not defined`);
+    return Number(m[1]);
+  };
+
+  it("ascends", () => {
+    const steps = ["sm", "md", "lg", "xl"].map(radius);
+    expect(steps).toEqual([...steps].sort((a, b) => a - b));
+  });
+
+  it("stays tight enough for a data terminal", () => {
+    // The scale came from the old warm-editorial CHAT surface, where soft corners suited prose. On
+    // a dense table they read as bubbly and blunt the grid. Cards use rounded-lg.
+    expect(radius("lg")).toBeLessThanOrEqual(8);
+    expect(radius("md")).toBeLessThanOrEqual(6);
+  });
+});

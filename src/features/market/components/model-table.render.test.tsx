@@ -31,14 +31,18 @@ describe("ModelTable engine (render)", () => {
     expect(rowIds()).toEqual(["m/high", "m/mid", "m/low"]);
   });
 
-  it("detailed view header click sorts by that column (desc first)", () => {
+  it("header click sorts by that column - names A-Z first, scores highest first", () => {
+    // Scores are desc-first ("sort by intelligence" means show me the smartest). A NAME column is
+    // the opposite: clicking Model must go A-Z, not Z-A.
     useFiltersStore.setState({ view: "detailed" });
     render(<ModelTable models={[M("m/high", 90), M("m/low", 10), M("m/mid", 50)]} loading={false} />);
-    expect(rowIds()).toEqual(["m/high", "m/mid", "m/low"]); // default overall desc
-    fireEvent.click(screen.getByText("Model")); // sort by id, desc first
-    expect(rowIds()).toEqual(["m/mid", "m/low", "m/high"]);
-    fireEvent.click(screen.getByText("Model")); // toggle asc
+    expect(rowIds()).toEqual(["m/high", "m/mid", "m/low"]); // default: overall desc
+
+    fireEvent.click(screen.getByText("Model")); // by id, ascending first
     expect(rowIds()).toEqual(["m/high", "m/low", "m/mid"]);
+
+    fireEvent.click(screen.getByText("Model")); // toggle to descending
+    expect(rowIds()).toEqual(["m/mid", "m/low", "m/high"]);
   });
 
   it("paginates through the engine — pageSize caps rendered rows", () => {

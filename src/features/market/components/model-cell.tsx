@@ -26,40 +26,40 @@ const DIVERGENCE = {
  */
 export function ModelCell({ model, showHonesty }: { model: ModelStats; showHonesty: boolean }) {
   return (
-    <div className="flex items-center gap-2.5 min-w-0">
-      <ParamBadge params={model.params} />
+    <div className="min-w-0">
+      <div className="flex items-center gap-1.5 min-w-0">
+        {showHonesty && model.confidence ? <ConfidenceDot model={model} /> : null}
+        <span className="text-sm font-medium truncate">{displayName(model.id)}</span>
+        <ParamBadge params={model.params} />
+        {model.archetype ? <ArchetypeTag archetype={model.archetype} /> : null}
+        {showHonesty ? <DivergenceTag model={model} /> : null}
+      </div>
 
-      <div className="min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          {showHonesty && model.confidence ? <ConfidenceDot model={model} /> : null}
-          <span className="text-sm font-medium truncate">{displayName(model.id)}</span>
-          {model.archetype ? <ArchetypeTag archetype={model.archetype} /> : null}
-          {showHonesty ? <DivergenceTag model={model} /> : null}
-        </div>
-
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-(--color-fg-subtle) truncate">
-          <ProviderAvatar provider={model.provider} size="xs" />
-          <span className="truncate">{model.provider}</span>
-        </div>
+      <div className="mt-0.5 flex items-center gap-1.5 text-xs text-(--color-fg-subtle) truncate">
+        <ProviderAvatar provider={model.provider} size="xs" />
+        <span className="truncate">{model.provider}</span>
       </div>
     </div>
   );
 }
 
-/** Rendered only when the size is actually known.
+/** An inline chip, present only when the size is actually known - NOT a reserved gutter.
  *
- * Every row used to show "1B" because the backend defaulted an unparseable size to 1.0 - so Claude
- * Opus, GPT-5 and Gemini all claimed to be 1B models. An empty slot is honest; a fake number is not.
+ * Two mistakes were stacked here. First the backend defaulted an unparseable size to 1.0, so every
+ * row claimed "1B" (Claude Opus is not a 1B model). Fixing that left 190 of 270 models with no size
+ * at all - and this component still reserved a 36px slot for each of them, so nearly every row
+ * carried an empty box between the rank and the name.
+ *
+ * You cannot reserve a column for data that mostly does not exist. It is a chip beside the name
+ * now: it appears when we know the size, and takes no space at all when we do not.
  */
 function ParamBadge({ params }: { params: number | null }) {
-  if (params == null) {
-    return <div className="w-9 shrink-0" aria-hidden />;
-  }
+  if (params == null) return null;
 
   return (
-    <div className="w-9 h-7 shrink-0 rounded-md bg-(--color-surface-2) border border-(--color-border) flex items-center justify-center text-2xs font-mono font-semibold text-(--color-fg-muted) tabular-nums">
+    <span className="shrink-0 rounded-sm bg-(--color-surface-2) border border-(--color-border) px-1.5 py-px text-2xs font-mono font-semibold text-(--color-fg-muted) tabular-nums">
       {formatParams(params)}
-    </div>
+    </span>
   );
 }
 

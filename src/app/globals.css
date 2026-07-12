@@ -83,11 +83,15 @@
   --text-4xl--line-height: 1.1;
 
   /* ============ RADIUS ============ */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  /* Tightened one step across the board. The scale came from the old "warm editorial" chat surface,
+     where soft corners suited prose; on a dense data terminal they read as bubbly and blunt the
+     grid. Cards (rounded-lg) go 12 -> 8, the most-used step (rounded-md) 8 -> 6.
+     Changing the tokens changes every card at once - which is the entire point of having them. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
 
   /* ============ ELEVATION ============ */
   --shadow-popover: 0 8px 30px rgb(0 0 0 / 0.35);
@@ -115,13 +119,18 @@
   /* ============ LAYOUT: MARKET TABLE COLUMNS ============ */
   /* The table's column budget lives here, in one place, so the widths can be reasoned about
      together instead of being discovered one component at a time. */
+  /* MODEL is the only column with variable-length content, so it is the one that FLEXES: it takes
+     the slack and stops truncating "claude-opus-4.8-...". Everything else is fixed, sized to its
+     content. Previously this was inverted - MODEL was frozen at 300px and SIGNALS (fixed content,
+     capped meters) absorbed the leftover, which is where ~680px of dead space came from. */
   --spacing-col-rank: 2.5rem; /* 40px */
-  --spacing-col-model: 18.75rem; /* 300px */
-  --spacing-col-score: 9.375rem; /* 150px */
-  --spacing-col-cost: 5.625rem; /* 90px */
+  --spacing-col-model: 26rem; /* 416px - fixed, wide enough that names stop truncating */
+  --spacing-col-score: 8.75rem; /* 140px - number + bar */
+  /* SIGNALS has no fixed width: it absorbs the slack, and its meters FILL it. That turns the
+     remainder into longer, more readable bars instead of a dead pool. The original bug was a
+     120px cap on each meter, so the column stretched while its contents refused to. */
+  --spacing-col-cost: 6rem; /* 96px */
   --spacing-col-action: 3rem; /* 48px */
-  --spacing-signal-min: 4.5rem; /* 72px */
-  --spacing-signal-max: 7.5rem; /* 120px */
   --spacing-score-num: 2rem; /* 32px - the headline number's gutter */
 
   /* ============ LAYOUT: COMPONENT SIZES ============ */
@@ -142,7 +151,11 @@
   /* Data surfaces stay wide - a dense table wants columns, not reading measure. This caps the
      ultrawide case (row scanning becomes eye-travel past ~1600px) without squeezing the table.
      Prose surfaces (chat) cap far tighter; see --width-prose. */
-  --width-market: 1600px;
+  /* Sized to the table's actual content (~1130px + padding), not to an arbitrary "wide" number.
+     At 1600px the table had ~470px of slack that had to go SOMEWHERE: first it pooled between the
+     signals and the cost column, then - once model became the flexible column - it pooled inside
+     the model cell. Dead space is not a layout, it is an unallocated remainder. */
+  --width-market: 1280px;
   --width-prose: 1100px;
 
   /* ============ Z-INDEX ============ */
