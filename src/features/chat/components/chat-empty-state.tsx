@@ -24,7 +24,7 @@ export function ChatEmptyState({ models }: { models: ModelStats[] }) {
 
   return (
     <div className={cn(CHAT_SURFACE_CLASS, "items-center justify-center p-6 text-center")}>
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--color-accent-soft) text-(--color-accent) mb-4">
+      <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-(--color-accent-soft) text-(--color-accent) mb-4">
         <Sparkles className="w-5 h-5" />
       </div>
       <h2 className="serif text-4xl font-semibold">Pick a model to start</h2>

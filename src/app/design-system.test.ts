@@ -170,10 +170,31 @@ describe("radius scale", () => {
     expect(steps).toEqual([...steps].sort((a, b) => a - b));
   });
 
-  it("stays tight enough for a data terminal", () => {
+  it("stays sharp enough for a data terminal", () => {
     // The scale came from the old warm-editorial CHAT surface, where soft corners suited prose. On
-    // a dense table they read as bubbly and blunt the grid. Cards use rounded-lg.
-    expect(radius("lg")).toBeLessThanOrEqual(8);
-    expect(radius("md")).toBeLessThanOrEqual(6);
+    // a dense table they fight the grid. Cards use rounded-lg; the most common step is rounded-md.
+    expect(radius("lg")).toBeLessThanOrEqual(6);
+    expect(radius("md")).toBeLessThanOrEqual(4);
+    expect(radius("sm")).toBeLessThanOrEqual(2);
+  });
+
+  it("rounded-full is reserved for actual circles", () => {
+    // It was doing two jobs: real circles (status dots, avatars, the toggle knob) AND pills that
+    // ignored the radius scale entirely (provider filter chips, score bars). A chip is not a circle.
+    const pillSuspects = [
+      "src/features/market/components/provider-chips.tsx",
+      "src/features/market/components/score-bar.tsx",
+    ];
+
+    for (const file of pillSuspects) {
+      const source = readFileSync(file, "utf8");
+      // The dot INSIDE a chip is legitimately round; the chip and the bar are not.
+      const roundedContainers = source
+        .split("\n")
+        .filter((line) => line.includes("rounded-full"))
+        .filter((line) => !/w-1\.5 h-1\.5|w-2 h-2/.test(line));
+
+      expect(roundedContainers).toEqual([]);
+    }
   });
 });

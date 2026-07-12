@@ -15,7 +15,7 @@ export function ChatGreeting({
 }) {
   return (
     <div className="py-12 text-center space-y-6">
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--color-accent-soft) text-(--color-accent)">
+      <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-(--color-accent-soft) text-(--color-accent)">
         <Sparkles className="w-5 h-5" />
       </div>
       <div>
