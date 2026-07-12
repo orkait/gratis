@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated deploy output and the Python side: neither is ours to lint.
+    ".open-next/**",
+    ".wrangler/**",
+    "backend/**",
   ]),
 ]);
 

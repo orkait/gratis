@@ -1,7 +1,7 @@
 /** The backend contract. Header names are a wire protocol shared with the FastAPI service - a typo
  *  here is a silent auth failure, so they are declared once. */
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3460";
 
 /** Per-request bring-your-own-key headers. The backend reads exactly these names. */
 export const AUTH_HEADERS = {
