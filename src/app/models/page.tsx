@@ -10,6 +10,7 @@ import { KpiStrip } from "@/components/app/kpi-strip";
 import { ProviderChips } from "@/components/app/provider-chips";
 import { TaskLens } from "@/components/app/task-lens";
 import { ModelTable, applyFilters } from "@/components/app/model-table";
+import { MarketError } from "@/components/app/market-error";
 import { DetailDrawer } from "@/components/app/detail-drawer";
 import { CommandPalette } from "@/components/app/command-palette";
 import { HelpSheet } from "@/components/app/help-sheet";
@@ -17,7 +18,7 @@ import { HelpSheet } from "@/components/app/help-sheet";
 export default function ModelsPage() {
   const { filters } = useFiltersStore();
   const { drawerModelId, openDrawer, closeDrawer, setCmdk, cmdkOpen } = useUIStore();
-  const { data: models = [], isLoading } = useRankings();
+  const { data: models = [], isLoading, isError, error, refetch } = useRankings();
   const filtered = useMemo(() => applyFilters(models, filters), [models, filters]);
   const [helpOpen, setHelpOpen] = useState(false);
 
@@ -52,10 +53,18 @@ export default function ModelsPage() {
         <Header count={filtered.length} onHelpClick={() => setHelpOpen(true)} />
         <main className="flex-1 overflow-auto p-6">
           <div className="mx-auto w-full max-w-(--width-market)">
-            <KpiStrip models={filtered} loading={isLoading} />
-            <ProviderChips />
-            <TaskLens />
-            <ModelTable models={filtered} loading={isLoading} />
+            {isError ? (
+              // Replaces the whole surface, not just the table: KPI cards reading "0 models / 0
+              // providers" beside an error message would be their own small lie.
+              <MarketError onRetry={() => refetch()} message={error instanceof Error ? error.message : undefined} />
+            ) : (
+              <>
+                <KpiStrip models={filtered} loading={isLoading} />
+                <ProviderChips />
+                <TaskLens />
+                <ModelTable models={filtered} loading={isLoading} />
+              </>
+            )}
           </div>
         </main>
       </div>
