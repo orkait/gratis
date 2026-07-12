@@ -19,6 +19,6 @@ export const DATABASES = {
 /** Store-version bumps force a `migrate` in the zustand slice. */
 export const STORE_VERSIONS = {
   ui: 3,
-  filters: 2,
+  filters: 3,
   chatSession: 1,
 } as const;
