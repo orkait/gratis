@@ -31,7 +31,11 @@ export type Filters = {
 };
 
 const DEFAULT_FILTERS: Filters = {
-  freeOnly: false, openOnly: false, brain: false, tools: false,
+  // Free-first, because that is the entire product. The market used to open on $50/M and $150/M
+  // models in a tool whose premise is running LLMs for nothing. The toggle is right there in the
+  // sidebar for anyone who wants the paid comparison.
+  freeOnly: true,
+  openOnly: false, brain: false, tools: false,
   minParams: 0, minCtx: 0, search: "", provider: "all",
 };
 
@@ -80,6 +84,16 @@ export const useFiltersStore = create<FiltersState>()(
     {
       name: STORAGE_KEYS.filters,
       version: STORE_VERSIONS.filters,
+      // v1 shipped freeOnly:false as a DEFAULT, not as a choice. Anyone still carrying that value
+      // never asked for it, so move them to the free-first default rather than pinning them to an
+      // accident. A user who deliberately turns it off simply gets it persisted again.
+      migrate: (persisted, version) => {
+        const state = persisted as { filters?: Filters } | undefined;
+        if (version < 2 && state?.filters) {
+          return { ...state, filters: { ...state.filters, freeOnly: true } };
+        }
+        return state as never;
+      },
       storage: createJSONStorage(() => getBrowserStorage()),
       partialize: (s) => ({ filters: s.filters, sort: s.sort, pageSize: s.pageSize, lens: s.lens, view: s.view }),
     },

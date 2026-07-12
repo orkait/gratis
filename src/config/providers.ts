@@ -65,8 +65,14 @@ export const FALLBACK_PROVIDER: ProviderId = "openrouter";
 
 export const PROVIDER_LIST: readonly ProviderSpec[] = PROVIDER_IDS.map((id) => PROVIDERS[id]);
 
-/** Which provider's key a model id needs. Mirrors resolve_model() on the backend. */
-export function providerForModel(modelId: string): ProviderId {
+/** Which provider's key a model id needs. Mirrors resolve_model() on the backend.
+ *
+ * Accepts null/undefined on purpose. Callers feed this ids that came out of IndexedDB, and a record
+ * written by an older build carries no type guarantee at all. This used to be typed `string`, so a
+ * legacy thread with no modelId threw on `.startsWith` and unmounted the entire archive page. A
+ * lookup function must not be able to crash the app that calls it. */
+export function providerForModel(modelId: string | null | undefined): ProviderId {
+  if (!modelId) return FALLBACK_PROVIDER;
   const match = PROVIDER_LIST.find((p) => p.prefix && modelId.startsWith(p.prefix));
   return match?.id ?? FALLBACK_PROVIDER;
 }

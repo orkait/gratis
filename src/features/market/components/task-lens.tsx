@@ -1,5 +1,6 @@
 "use client";
 import { useCallback } from "react";
+import { TriangleAlert } from "lucide-react";
 import { ToggleGroup } from "@base-ui-components/react/toggle-group";
 import { Toggle } from "@base-ui-components/react/toggle";
 import { useFiltersStore, type Lens, type ViewMode } from "@/stores/filters-store";
@@ -71,6 +72,22 @@ export function TaskLens() {
           <LensCard key={spec.id} spec={spec} />
         ))}
       </ToggleGroup>
+
+      <EstimatedNotice lens={lens} />
+    </div>
+  );
+}
+
+/** A lens that ranks on inferred data must say so where the ranking is read, not in a tooltip
+ *  nobody opens. Silence here is a claim we cannot back. */
+function EstimatedNotice({ lens }: { lens: Lens }) {
+  const spec = LENSES.find((candidate) => candidate.id === lens);
+  if (!spec?.estimated) return null;
+
+  return (
+    <div className="mt-2 flex items-start gap-1.5 text-xs text-(--color-warning)">
+      <TriangleAlert className="w-3.5 h-3.5 mt-px shrink-0" />
+      <span>{spec.estimated}</span>
     </div>
   );
 }

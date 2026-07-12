@@ -9,6 +9,8 @@ import { Kbd } from "@/components/ui/kbd";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "./theme-toggle";
+import { ErrorBoundary } from "./error-boundary";
+import { VaultIndicator } from "@/features/vault/components/vault-indicator";
 import { cn } from "@/lib/utils";
 
 /** ONE shell for every surface.
@@ -120,6 +122,7 @@ export function AppShell({
           </button>
 
           <div className="flex items-center gap-1 shrink-0">
+            <VaultIndicator />
             {actions}
             <ThemeToggle />
           </div>
@@ -127,7 +130,9 @@ export function AppShell({
 
         <main className={cn("flex-1 min-h-0 flex flex-col", padded && "p-6")}>
           <div className={cn("mx-auto w-full flex-1 min-h-0 flex flex-col", WIDTH_CLASS[width])}>
-            {children}
+            {/* Scoped to the CONTENT, not the whole app: a crashing surface must not take the nav
+                and header with it, or the user has no way out except a reload. */}
+            <ErrorBoundary surface={title.toLowerCase()}>{children}</ErrorBoundary>
           </div>
         </main>
       </div>
