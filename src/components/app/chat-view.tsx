@@ -5,6 +5,8 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { Send, Square, User, Bot, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useChatSessionStore } from "@/lib/stores/chat-session-store";
+import { useVaultStore } from "@/lib/stores/vault-store";
+import { providerForModel } from "@/lib/vault";
 import { useThread, useSaveThread } from "@/lib/query/threads";
 import type { ChatMessage } from "@/lib/chat-db";
 import type { ModelStats } from "@/lib/types";
@@ -66,9 +68,20 @@ function ChatActiveView({ modelId, models }: { modelId: string } & Props) {
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        prepareSendMessagesRequest: ({ messages }) => ({
-          body: { messages: trimToContext(messages, modelCtx), model: modelId },
-        }),
+        prepareSendMessagesRequest: ({ messages }) => {
+          // Read at send time, not render time: the vault may be unlocked mid-session, and the key
+          // must never be captured into a memo that outlives a lock().
+          const { keyFor } = useVaultStore.getState();
+          const key = keyFor(providerForModel(modelId));
+          const cfAccount = keyFor("cloudflare_account_id");
+          return {
+            body: { messages: trimToContext(messages, modelCtx), model: modelId },
+            headers: {
+              ...(key ? { "X-Provider-Key": key } : {}),
+              ...(cfAccount ? { "X-CF-Account-Id": cfAccount } : {}),
+            },
+          };
+        },
       }),
     [modelId, modelCtx],
   );

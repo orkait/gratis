@@ -53,6 +53,9 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 GOOGLE_AISTUDIO_API_KEY = os.getenv("GOOGLE_AISTUDIO_API_KEY", "")
 LOCAL_API_KEY = os.getenv("LOCAL_API_KEY", "")
+# Set on a public deploy: inference then requires the caller's own provider key (BYOK). The market
+# still renders from the server's keys, so a first-time visitor sees a populated page.
+REQUIRE_USER_KEY = os.getenv("REQUIRE_USER_KEY", "0") not in {"0", "false", "False", ""}
 FALLBACK_MODEL = "groq/llama-3.3-70b-versatile"
 OLLAMA_CLOUD_BASE = "https://ollama.com/v1"
 
@@ -189,6 +192,17 @@ async def validation_exc_handler(_: Request, exc: RequestValidationError):
 
 # ===== Auth (optional bearer) =====
 
+def require_user_key(user_key: str | None) -> None:
+    """Public deploys must not lend their own provider keys for inference - a stranger would drain
+    the deployer's quota. Off by default so local dev and self-hosting keep working from .env.
+    """
+    if REQUIRE_USER_KEY and not user_key:
+        raise HTTPException(
+            status_code=401,
+            detail="This deployment requires your own provider API key. Add one in Settings.",
+        )
+
+
 async def require_auth(authorization: str | None = Header(default=None)):
     if not LOCAL_API_KEY:
         return  # open mode - no auth required
@@ -201,42 +215,57 @@ async def require_auth(authorization: str | None = Header(default=None)):
 
 # ===== Model resolution =====
 
-def resolve_model(model_id: str) -> tuple[str, dict[str, Any]]:
-    """Returns (litellm_model_string, extra_kwargs)."""
+def resolve_model(
+    model_id: str,
+    user_key: str | None = None,
+    cf_account_id: str | None = None,
+) -> tuple[str, dict[str, Any]]:
+    """Returns (litellm_model_string, extra_kwargs).
+
+    `user_key` is a bring-your-own key supplied per request. It is used in place of the server's key
+    for whichever provider owns the model, and is never stored or logged.
+    """
     if model_id in ALIASES:
         model_id = ALIASES[model_id]
 
     if model_id.startswith("aistudio/"):
         slug = model_id[len("aistudio/"):]
-        return f"gemini/{slug}", {"api_key": GOOGLE_AISTUDIO_API_KEY}
+        return f"gemini/{slug}", {"api_key": user_key or GOOGLE_AISTUDIO_API_KEY}
 
     if is_groq_model(model_id):
         slug = strip_groq_prefix(model_id)
-        return f"groq/{slug}", {"api_key": get_groq_api_key()}
+        return f"groq/{slug}", {"api_key": user_key or get_groq_api_key()}
 
     if is_cerebras_model(model_id):
         slug = strip_cerebras_prefix(model_id)
-        return f"cerebras/{slug}", {"api_key": get_cerebras_api_key()}
+        return f"cerebras/{slug}", {"api_key": user_key or get_cerebras_api_key()}
 
     if is_cloudflare_model(model_id):
         slug = strip_cloudflare_prefix(model_id)
-        api_key, account_id = get_cloudflare_credentials()
+        env_key, env_account = get_cloudflare_credentials()
         return f"openai/{slug}", {
-            "api_base": cloudflare_openai_base(account_id),
-            "api_key": api_key,
+            "api_base": cloudflare_openai_base(cf_account_id or env_account),
+            "api_key": user_key or env_key,
         }
 
     if model_id.startswith("ollama/"):
         slug = model_id[len("ollama/"):]
         return f"openai/{slug}", {
             "api_base": OLLAMA_CLOUD_BASE,
-            "api_key": OLLAMA_API_KEY or "ollama",
+            "api_key": user_key or OLLAMA_API_KEY or "ollama",
         }
 
     if model_id.startswith("openrouter/"):
-        return model_id, {"api_key": OPENROUTER_API_KEY}
+        return model_id, {"api_key": user_key or OPENROUTER_API_KEY}
 
-    return f"openrouter/{model_id}", {"api_key": OPENROUTER_API_KEY}
+    return f"openrouter/{model_id}", {"api_key": user_key or OPENROUTER_API_KEY}
+
+
+def user_credentials(request: Request) -> tuple[str | None, str | None]:
+    """Per-request BYOK credentials. Never persisted, never logged."""
+    key = (request.headers.get("X-Provider-Key") or "").strip() or None
+    account = (request.headers.get("X-CF-Account-Id") or "").strip() or None
+    return key, account
 
 
 async def pick_best_free_model() -> str:
@@ -262,9 +291,12 @@ async def chat_completions(request: Request) -> Any:
     model_id: str = body.get("model", "")
     is_pool = not model_id or model_id in POOL_MODEL_IDS
 
+    user_key, cf_account_id = user_credentials(request)
+    require_user_key(user_key)
+
     if is_pool:
         model_id = await pick_best_free_model()
-    litellm_model, extra = resolve_model(model_id)
+    litellm_model, extra = resolve_model(model_id, user_key, cf_account_id)
 
     messages = body.get("messages", [])
     stream: bool = body.get("stream", False)
@@ -319,7 +351,11 @@ async def chat_completions(request: Request) -> Any:
         raise
     except Exception as e:
         status = getattr(e, "status_code", 500) or 500
-        record_call_failure(availability, model_id, status, str(e))
+        # Only a failure on OUR key says anything about the model. A user's key can be revoked,
+        # out of quota or plain wrong - quarantining on that would let one bad key delete a working
+        # model for everyone, and would persist their key's error text to disk.
+        if user_key is None:
+            record_call_failure(availability, model_id, status, str(e))
         raise HTTPException(status_code=status, detail=str(e))
 
 
@@ -335,7 +371,10 @@ async def embeddings(request: Request) -> Any:
     if inputs is None:
         raise HTTPException(status_code=400, detail="input field required")
 
-    litellm_model, extra = resolve_model(model_id)
+    user_key, cf_account_id = user_credentials(request)
+    require_user_key(user_key)
+
+    litellm_model, extra = resolve_model(model_id, user_key, cf_account_id)
     passthrough = {k: v for k, v in body.items() if k not in {"model", "input"}}
 
     try:
@@ -350,7 +389,8 @@ async def embeddings(request: Request) -> Any:
         raise
     except Exception as e:
         status = getattr(e, "status_code", 500) or 500
-        record_call_failure(availability, model_id, status, str(e))
+        if user_key is None:
+            record_call_failure(availability, model_id, status, str(e))
         raise HTTPException(status_code=status, detail=str(e))
 
 
