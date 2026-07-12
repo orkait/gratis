@@ -33,7 +33,7 @@ const MessageRow = memo(function MessageRow({
     <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>
       <div
         className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+          "w-8 h-8 rounded-md flex items-center justify-center shrink-0 mt-0.5",
           isUser ? "bg-(--color-accent)" : "bg-(--color-surface-2) border border-(--color-border)",
         )}
       >

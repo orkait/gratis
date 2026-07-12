@@ -19,9 +19,9 @@ function widthOf(value: number | null | undefined): number {
 
 export function ScoreBar({ value, tone = "accent" }: { value?: number | null; tone?: BarTone }) {
   return (
-    <div className="h-2 w-full rounded-full bg-(--color-surface-3) overflow-hidden">
+    <div className="h-2 w-full rounded-sm bg-(--color-surface-3) overflow-hidden">
       <div
-        className={cn("h-full rounded-full transition-[width] duration-300", TONE_CLASS[tone])}
+        className={cn("h-full rounded-sm transition-[width] duration-300", TONE_CLASS[tone])}
         style={{ width: `${widthOf(value)}%` }}
       />
     </div>
