@@ -16,6 +16,7 @@ from dataclasses import dataclass
 # `backend/.env` (loaded by load_dotenv when the backend runs from its own directory). AA_API_KEY
 # lived only in the second one, which is exactly why it was missed when provisioning the host.
 AA_KEY = "AA_API_KEY"
+DATABASE = "DATABASE_URL"
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,15 @@ class Capability:
 
 
 CAPABILITIES: tuple[Capability, ...] = (
+    Capability(
+        name="durable_state",
+        env_var=DATABASE,
+        degradation=(
+            "No database: API keys, usage metering and price history are unavailable, and "
+            "availability learning falls back to SQLite on local disk - which on an ephemeral "
+            "host is destroyed on every deploy, taking an hour of probing with it."
+        ),
+    ),
     Capability(
         name="intelligence",
         env_var=AA_KEY,

@@ -39,6 +39,9 @@ from providers.scoring import score_models
 from providers.arena import fetch_arena_elo, attach_arena
 from providers.ttl_cache import AsyncTTLCache
 from providers.capabilities import degradations, warn_on_startup
+from providers import db, api_keys, usage, market_store
+from providers.api_keys import ApiKey, Scope
+from providers.availability_pg import PostgresAvailabilityStore
 from providers.availability import (
     PROBE_INTERVAL,
     AvailabilityStore,
@@ -57,6 +60,9 @@ LOCAL_API_KEY = os.getenv("LOCAL_API_KEY", "")
 # Set on a public deploy: inference then requires the caller's own provider key (BYOK). The market
 # still renders from the server's keys, so a first-time visitor sees a populated page.
 REQUIRE_USER_KEY = os.getenv("REQUIRE_USER_KEY", "0") not in {"0", "false", "False", ""}
+# Mints and revokes consumer keys. Separate from LOCAL_API_KEY on purpose: the key that can create
+# credentials must not be the same key you hand to a consumer.
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
 FALLBACK_MODEL = "groq/llama-3.3-70b-versatile"
 OLLAMA_CLOUD_BASE = "https://ollama.com/v1"
 
@@ -103,7 +109,10 @@ litellm.drop_params = True
 litellm.set_verbose = False
 
 
-availability = AvailabilityStore()
+# Postgres when there is one, SQLite otherwise. The SQLite path is what local dev and self-hosting
+# use; it is also what production used to use, on an ephemeral disk, which is why an hour of
+# learning was destroyed on every deploy.
+availability = PostgresAvailabilityStore() if db.is_configured() else AvailabilityStore()
 
 
 async def _probe_one(model_id: str) -> None:
@@ -141,11 +150,19 @@ async def _probe_sweep() -> None:
 async def lifespan(app: FastAPI):
     # Say it out loud at boot. Production ran for hours with no AA key and looked fine.
     warn_on_startup()
+
+    await db.connect()
+    if db.is_configured():
+        # The quarantine mirror must be warm BEFORE the first request, or a fresh instance serves a
+        # market full of models it already knows are dead.
+        await availability.refresh()
+
     sweep = asyncio.create_task(_probe_sweep())
     try:
         yield
     finally:
         sweep.cancel()
+        await db.disconnect()
 
 
 app = FastAPI(title="Gratis", version="1.0.0", lifespan=lifespan)
@@ -206,14 +223,68 @@ def require_user_key(user_key: str | None) -> None:
         )
 
 
-async def require_auth(authorization: str | None = Header(default=None)):
-    if not LOCAL_API_KEY:
-        return  # open mode - no auth required
+def _bearer(authorization: str | None) -> str | None:
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = authorization[len("Bearer "):].strip()
-    if token != LOCAL_API_KEY:
+        return None
+    return authorization[len("Bearer "):].strip() or None
+
+
+async def resolve_caller(authorization: str | None = Header(default=None)) -> ApiKey | None:
+    """Who is calling. None means "unauthenticated", which is only allowed in open mode.
+
+    Three eras of auth coexist deliberately:
+      gr_live_...     a per-consumer key from Postgres: scoped, revocable, metered
+      LOCAL_API_KEY   the single shared secret. Still honoured so existing deployments and the UI
+                      do not break the moment this ships.
+      no key          open mode, when neither is configured (local dev, self-hosting)
+    """
+    token = _bearer(authorization)
+
+    if token and token.startswith(api_keys.KEY_PREFIX) and db.is_configured():
+        key = await api_keys.authenticate(token)
+        if key is None:
+            # Unknown and revoked must be indistinguishable, or this becomes an oracle for which
+            # keys exist.
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        if not await usage.within_rate_limit(key.id):
+            raise HTTPException(status_code=429, detail="Rate limit exceeded")
+        return key
+
+    if LOCAL_API_KEY:
+        if token != LOCAL_API_KEY:
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        return None  # the shared secret has no identity, so it cannot be metered or scoped
+
+    if token:
         raise HTTPException(status_code=401, detail="Invalid API key")
+
+    return None  # open mode
+
+
+def require_scope(scope: str):
+    """A market-only consumer must not be able to spend inference. Keys minted before scopes
+    existed, and the shared secret, are unscoped and therefore unrestricted - that is what
+    backward compatibility costs."""
+
+    async def dependency(caller: ApiKey | None = Depends(resolve_caller)) -> ApiKey | None:
+        if caller is not None and caller.scopes and not caller.has(scope):
+            raise HTTPException(status_code=403, detail=f"Key lacks the '{scope}' scope")
+        return caller
+
+    return dependency
+
+
+async def require_admin(authorization: str | None = Header(default=None)) -> None:
+    """Minting credentials is not something an ordinary key may do."""
+    if not ADMIN_TOKEN:
+        raise HTTPException(status_code=503, detail="ADMIN_TOKEN is not configured")
+    if _bearer(authorization) != ADMIN_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid admin token")
+
+
+async def require_auth(authorization: str | None = Header(default=None)):
+    """Kept so existing routes keep working while they migrate to require_scope()."""
+    await resolve_caller(authorization)
 
 
 # ===== Model resolution =====
@@ -288,8 +359,23 @@ async def pick_best_free_model() -> str:
 
 # ===== Chat completions =====
 
-@app.post("/v1/chat/completions", dependencies=[Depends(require_auth)])
-async def chat_completions(request: Request) -> Any:
+def _meter(caller: ApiKey | None, endpoint: str, status: int, model_id: str | None, usage_block: dict | None = None) -> None:
+    """Fire-and-forget. A metering write must never fail the request it is describing."""
+    if caller is None:
+        return  # the shared secret has no identity, so there is nothing to meter it against
+    tokens = usage_block or {}
+    usage.record_background(
+        key_id=caller.id,
+        endpoint=endpoint,
+        status=status,
+        model_id=model_id,
+        prompt_tokens=tokens.get("prompt_tokens"),
+        completion_tokens=tokens.get("completion_tokens"),
+    )
+
+
+@app.post("/v1/chat/completions")
+async def chat_completions(request: Request, caller: ApiKey | None = Depends(require_scope(Scope.INFERENCE))) -> Any:
     body = await request.json()
     model_id: str = body.get("model", "")
     is_pool = not model_id or model_id in POOL_MODEL_IDS
@@ -348,7 +434,9 @@ async def chat_completions(request: Request) -> Any:
             **extra,
             **passthrough,
         )
-        return JSONResponse(content=response.model_dump())
+        payload = response.model_dump()
+        _meter(caller, "/v1/chat/completions", 200, model_id, payload.get("usage"))
+        return JSONResponse(content=payload)
 
     except HTTPException:
         raise
@@ -359,6 +447,7 @@ async def chat_completions(request: Request) -> Any:
         # model for everyone, and would persist their key's error text to disk.
         if user_key is None:
             record_call_failure(availability, model_id, status, str(e))
+        _meter(caller, "/v1/chat/completions", status, model_id)
         raise HTTPException(status_code=status, detail=str(e))
 
 
@@ -399,11 +488,24 @@ async def embeddings(request: Request) -> Any:
 
 # ===== Models =====
 
-@app.get("/v1/models", dependencies=[Depends(require_auth)])
-async def models():
+@app.get("/v1/models")
+async def models(caller: ApiKey | None = Depends(require_scope(Scope.MARKET))):
+    _meter(caller, "/v1/models", 200, None)
     result = await fetch_unified_models()
     result["data"] = filter_available(result.get("data", []), availability)
     return JSONResponse(content=result)
+
+
+# MUST be declared before /v1/models/{model_id:path}: that route is greedy (`:path` matches slashes)
+# and would otherwise swallow "<id>/history" and return a 404 for a model literally called that.
+@app.get("/v1/models/{model_id:path}/history")
+async def model_history(model_id: str, days: int = 30, caller: ApiKey | None = Depends(require_scope(Scope.MARKET))):
+    _meter(caller, "/v1/models/history", 200, model_id)
+    """Price and score over time. The market could never answer 'did this get cheaper?' because it
+    only ever knew about right now."""
+    if not db.is_configured():
+        raise HTTPException(status_code=503, detail="A database is required for history")
+    return {"model_id": model_id, "days": days, "data": await market_store.history(model_id, days)}
 
 
 @app.get("/v1/models/{model_id:path}", dependencies=[Depends(require_auth)])
@@ -413,6 +515,81 @@ async def model_get(model_id: str):
     if not found:
         raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
     return JSONResponse(content=found)
+
+
+# ===== Service: keys, usage, history =====
+
+@app.post("/admin/keys", dependencies=[Depends(require_admin)])
+async def create_api_key(request: Request):
+    """Mint a consumer key. The raw value is returned ONCE and is not recoverable - only a SHA-256
+    digest is stored, so a database dump hands an attacker nothing usable."""
+    if not db.is_configured():
+        raise HTTPException(status_code=503, detail="A database is required to issue API keys")
+
+    body = await request.json()
+    tenant = (body.get("tenant") or "").strip()
+    name = (body.get("name") or "").strip()
+    if not tenant or not name:
+        raise HTTPException(status_code=400, detail="tenant and name are required")
+
+    scopes = tuple(body.get("scopes") or api_keys.DEFAULT_SCOPES)
+    raw, key = await api_keys.create(tenant, name, scopes)
+
+    return JSONResponse(
+        status_code=201,
+        content={
+            "id": key.id,
+            "tenant": key.tenant,
+            "name": key.name,
+            "scopes": list(key.scopes),
+            "key": raw,
+            "warning": "This is the only time the key is shown. Store it now.",
+        },
+    )
+
+
+@app.get("/admin/keys", dependencies=[Depends(require_admin)])
+async def list_api_keys(tenant: str | None = None):
+    keys = await api_keys.list_keys(tenant)
+    return {
+        "data": [
+            {
+                "id": k.id,
+                "tenant": k.tenant,
+                "name": k.name,
+                "key_prefix": k.key_prefix,
+                "scopes": list(k.scopes),
+                "created_at": k.created_at.isoformat(),
+                "last_used_at": k.last_used_at.isoformat() if k.last_used_at else None,
+                "revoked_at": k.revoked_at.isoformat() if k.revoked_at else None,
+            }
+            for k in keys
+        ]
+    }
+
+
+@app.delete("/admin/keys/{key_id}", dependencies=[Depends(require_admin)])
+async def revoke_api_key(key_id: str):
+    if not await api_keys.revoke(key_id):
+        raise HTTPException(status_code=404, detail="Key not found or already revoked")
+    return {"revoked": key_id}
+
+
+@app.get("/v1/usage")
+async def get_usage(hours: int = 24, caller: ApiKey | None = Depends(resolve_caller)):
+    """What THIS key has spent. A shared secret has no identity, so it has no usage to report."""
+    if caller is None:
+        raise HTTPException(status_code=401, detail="A per-consumer API key is required")
+    s = await usage.summary(caller.id, hours)
+    return {
+        "tenant": caller.tenant,
+        "window_hours": hours,
+        "requests": s.requests,
+        "prompt_tokens": s.prompt_tokens,
+        "completion_tokens": s.completion_tokens,
+        "errors": s.errors,
+    }
+
 
 
 # ===== Rankings (extension) =====
@@ -468,9 +645,21 @@ RANKINGS_CACHE_TTL = float(os.getenv("RANKINGS_CACHE_TTL", "1800"))
 _rankings_cache: AsyncTTLCache[list[dict]] = AsyncTTLCache(ttl=RANKINGS_CACHE_TTL)
 
 
+async def _compute_and_persist() -> list[dict]:
+    """Compute the market, then persist it: the snapshot is what lets the NEXT cold instance answer
+    immediately instead of refetching ~10 upstreams first."""
+    models = await _compute_rankings()
+    await market_store.save_snapshot(models)
+    return models
+
+
 @app.get("/v1/rankings")
-async def rankings():
-    data, hit = await _rankings_cache.get_or_compute(_compute_rankings)
+async def rankings(caller: ApiKey | None = Depends(require_scope(Scope.MARKET))):
+    # Metered, not just authorised. The rate limiter counts the SAME rows the usage report bills
+    # from, so an endpoint that is not metered is also not rate-limited - it would be a free hole
+    # straight through the quota.
+    _meter(caller, "/v1/rankings", 200, None)
+    data, hit = await _rankings_cache.get_or_compute(_compute_and_persist)
     # Filtered on read, not inside the cached compute: a quarantine then takes effect on the next
     # request instead of waiting out the 30-min TTL, and the prober still sees the full catalogue.
     return JSONResponse(

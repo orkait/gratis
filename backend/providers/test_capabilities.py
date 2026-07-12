@@ -5,7 +5,7 @@ degraded into nonsense in total silence: with no intelligence index every model 
 capability heuristic, a 1T model ranked #1, and every sub-score on every row was identical.
 """
 
-from providers.capabilities import AA_KEY, degradations, missing_capabilities
+from providers.capabilities import AA_KEY, DATABASE, degradations, missing_capabilities
 
 
 def test_missing_aa_key_is_reported(monkeypatch):
@@ -29,4 +29,14 @@ def test_degradation_says_what_actually_breaks(monkeypatch):
 
 def test_no_degradations_when_fully_configured(monkeypatch):
     monkeypatch.setenv(AA_KEY, "some-key")
+    monkeypatch.setenv(DATABASE, "postgres://x")
     assert degradations() == []
+
+
+def test_missing_database_is_reported(monkeypatch):
+    """No database means no API keys, no metering, no history - and availability learning back on an
+    ephemeral disk, where a deploy destroys it. That must not be silent either."""
+    monkeypatch.delenv(DATABASE, raising=False)
+    [entry] = [d for d in degradations() if d["missing_env"] == DATABASE]
+    assert entry["capability"] == "durable_state"
+    assert "metering" in entry["impact"]
