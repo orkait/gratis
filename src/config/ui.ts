@@ -7,9 +7,12 @@ export const SIDEBAR = {
   maxWidth: 400,
 } as const;
 
-export const PAGE_SIZES = [50, 100, 200] as const;
+export const PAGE_SIZES = [25, 50, 100, 200] as const;
 export type PageSize = (typeof PAGE_SIZES)[number];
-export const DEFAULT_PAGE_SIZE: PageSize = 50;
+
+/** 25 fits a laptop viewport without scrolling the header out of sight. Anyone who wants a denser
+ *  page is one click away, and the choice persists. */
+export const DEFAULT_PAGE_SIZE: PageSize = 25;
 
 /** Transition/animation durations in ms, matching the CSS token scale. */
 export const DURATION = {

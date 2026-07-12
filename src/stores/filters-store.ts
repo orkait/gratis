@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { STORAGE_KEYS, STORE_VERSIONS } from "@/config/storage";
+import { DEFAULT_PAGE_SIZE, type PageSize } from "@/config/ui";
 import { getBrowserStorage } from "./storage";
 import type { ProviderFilter } from "@/types/model";
 
@@ -9,7 +10,10 @@ import type { ProviderFilter } from "@/types/model";
 // dimension shows up and sorts with zero frontend changes.
 export type SortCol = string;
 
-export type PageSize = 50 | 100 | 200;
+/** Re-exported from config, NOT re-declared. This used to be a hand-written `50 | 100 | 200`, so
+ *  adding a page size to the config alone would leave the store rejecting it at the type level -
+ *  precisely the drift the config layer exists to prevent. */
+export type { PageSize };
 
 // Decision lens — "what are you building?" — drives the primary sort + the headline score per row.
 export type Lens = "overall" | "code" | "agent" | "reasoning" | "budget" | "fast";
@@ -29,6 +33,9 @@ export type Filters = {
   search: string;
   provider: ProviderFilter;
 };
+
+/** The page size v2 shipped as its default. Used only by the migration. */
+const LEGACY_DEFAULT_PAGE_SIZE = 50;
 
 const DEFAULT_FILTERS: Filters = {
   // Free-first, because that is the entire product. The market used to open on $50/M and $150/M
@@ -77,7 +84,7 @@ export const useFiltersStore = create<FiltersState>()(
       view: "decision",
       setView: (v) => { if (get().view !== v) set({ view: v }); },
       page: 1,
-      pageSize: 50,
+      pageSize: DEFAULT_PAGE_SIZE,
       setPage: (p) => { const np = Math.max(1, p); if (np !== get().page) set({ page: np }); },
       setPageSize: (s) => { if (s !== get().pageSize) set({ pageSize: s, page: 1 }); },
     }),
@@ -88,10 +95,20 @@ export const useFiltersStore = create<FiltersState>()(
       // never asked for it, so move them to the free-first default rather than pinning them to an
       // accident. A user who deliberately turns it off simply gets it persisted again.
       migrate: (persisted, version) => {
-        const state = persisted as { filters?: Filters } | undefined;
-        if (version < 2 && state?.filters) {
-          return { ...state, filters: { ...state.filters, freeOnly: true } };
+        let state = persisted as { filters?: Filters; pageSize?: number } | undefined;
+        if (!state) return state as never;
+
+        // v1 shipped freeOnly:false as a DEFAULT, not as a choice.
+        if (version < 2 && state.filters) {
+          state = { ...state, filters: { ...state.filters, freeOnly: true } };
         }
+
+        // v2's default page size was 50. Anyone still carrying exactly 50 never picked it - they
+        // took the default - so move them to the new one. A deliberate 100 or 200 is left alone.
+        if (version < 3 && state.pageSize === LEGACY_DEFAULT_PAGE_SIZE) {
+          state = { ...state, pageSize: DEFAULT_PAGE_SIZE };
+        }
+
         return state as never;
       },
       storage: createJSONStorage(() => getBrowserStorage()),

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useFiltersStore } from "@/stores/filters-store";
 import { LENSES } from "./lens-config";
+import { PAGE_SIZES, DEFAULT_PAGE_SIZE } from "@/config/ui";
 
 beforeEach(() => {
   useFiltersStore.getState().resetFilters();
@@ -38,5 +39,32 @@ describe("lenses that rank on inferred data say so", () => {
     for (const id of ["overall", "code", "agent", "reasoning"] as const) {
       expect(LENSES.find((lens) => lens.id === id)?.estimated).toBeUndefined();
     }
+  });
+});
+
+describe("page size", () => {
+  it("offers 25 and defaults to it", () => {
+    expect(PAGE_SIZES).toContain(25);
+    expect(DEFAULT_PAGE_SIZE).toBe(25);
+    expect(useFiltersStore.getState().pageSize).toBe(25);
+  });
+
+  it("keeps the denser options available", () => {
+    expect(PAGE_SIZES).toEqual([25, 50, 100, 200]);
+  });
+
+  it("the store accepts every size the config offers", () => {
+    // The store used to hand-declare `PageSize = 50 | 100 | 200`, so adding a size to the config
+    // alone would have left the store rejecting it. The type is derived now.
+    for (const size of PAGE_SIZES) {
+      useFiltersStore.getState().setPageSize(size);
+      expect(useFiltersStore.getState().pageSize).toBe(size);
+    }
+  });
+
+  it("changing page size returns to page 1", () => {
+    useFiltersStore.getState().setPage(4);
+    useFiltersStore.getState().setPageSize(100);
+    expect(useFiltersStore.getState().page).toBe(1);
   });
 });
