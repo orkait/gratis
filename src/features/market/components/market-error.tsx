@@ -14,19 +14,19 @@ export function MarketError({ onRetry, message }: { onRetry: () => void; message
     >
       <PlugZap className="w-8 h-8" />
       <div className="text-center">
-        <div className="text-[14px] font-medium text-(--color-fg-muted)">Can&apos;t reach the backend</div>
-        <div className="text-[12px] mt-1">
+        <div className="text-base font-medium text-(--color-fg-muted)">Can&apos;t reach the backend</div>
+        <div className="text-sm mt-1">
           The model market lives on the API server. Start it with{" "}
           <code className="font-mono text-(--color-fg-muted)">python dev.py</code>, then retry.
         </div>
         {message ? (
-          <div className="text-[11px] font-mono mt-2 text-(--color-fg-subtle) opacity-80">{message}</div>
+          <div className="text-xs font-mono mt-2 text-(--color-fg-subtle) opacity-80">{message}</div>
         ) : null}
       </div>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-(--color-border) px-3 py-1.5 text-[12px] text-(--color-fg-muted) hover:bg-(--color-surface-2) transition-colors"
+        className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-(--color-border) px-3 py-1.5 text-sm text-(--color-fg-muted) hover:bg-(--color-surface-2) transition-colors"
       >
         <RotateCw className="w-3.5 h-3.5" />
         Retry

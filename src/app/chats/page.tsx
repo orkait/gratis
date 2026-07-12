@@ -196,7 +196,7 @@ export default function ChatsPage() {
 
 function StorageBadge({ estimate }: { estimate: StorageEstimate }) {
   return (
-    <div className="hidden sm:flex items-center gap-1.5 h-7 px-2 rounded-md bg-(--color-surface-1) border border-(--color-border) text-[10px] font-mono text-(--color-fg-muted)">
+    <div className="hidden sm:flex items-center gap-1.5 h-7 px-2 rounded-md bg-(--color-surface-1) border border-(--color-border) text-xs font-mono text-(--color-fg-muted)">
       <Database className="w-3 h-3" />
       {formatBytes(estimate.usage)} / {formatBytes(estimate.quota)}
     </div>
@@ -223,7 +223,7 @@ function ThreadList({
   onConfirmDelete: (thread: ChatThread) => void;
 }) {
   if (loading) {
-    return <div className="text-[13px] text-(--color-fg-subtle) py-8 text-center">Loading...</div>;
+    return <div className="text-sm text-(--color-fg-subtle) py-8 text-center">Loading...</div>;
   }
 
   if (threads.length === 0) {
@@ -231,8 +231,8 @@ function ThreadList({
     return (
       <div className="py-16 flex flex-col items-center justify-center gap-3 text-(--color-fg-subtle)">
         <MessageSquare className="w-8 h-8" />
-        <div className="text-[14px] font-medium text-(--color-fg-muted)">{copy.title}</div>
-        <div className="text-[12px]">{copy.hint}</div>
+        <div className="text-base font-medium text-(--color-fg-muted)">{copy.title}</div>
+        <div className="text-sm">{copy.hint}</div>
       </div>
     );
   }
@@ -286,8 +286,8 @@ function ThreadRow({
     >
       <ProviderAvatar provider={providerLabel(thread.modelId)} size="md" />
       <button type="button" onClick={handleResume} className="flex-1 min-w-0 text-left cursor-pointer">
-        <div className="text-[13px] font-medium truncate">{thread.title}</div>
-        <div className="text-[11px] text-(--color-fg-subtle) flex items-center gap-2 mt-0.5">
+        <div className="text-sm font-medium truncate">{thread.title}</div>
+        <div className="text-xs text-(--color-fg-subtle) flex items-center gap-2 mt-0.5">
           <span className="font-mono truncate">{thread.modelId}</span>
           <span>·</span>
           <span>{thread.messages.length} msg</span>
@@ -297,7 +297,7 @@ function ThreadRow({
       </button>
       {pendingDelete ? (
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-(--color-danger)">Delete?</span>
+          <span className="text-xs text-(--color-danger)">Delete?</span>
           <Button size="sm" variant="ghost" onClick={onCancelDelete}>
             Cancel
           </Button>
@@ -340,8 +340,8 @@ function BulkDeleteDialog({
   return (
     <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
       <div className="rounded-lg bg-(--color-surface-1) border border-(--color-border) p-5 max-w-[400px] w-full">
-        <h2 className="text-[15px] font-semibold mb-1">Delete all threads?</h2>
-        <p className="text-[13px] text-(--color-fg-muted) mb-4">
+        <h2 className="text-lg font-semibold mb-1">Delete all threads?</h2>
+        <p className="text-sm text-(--color-fg-muted) mb-4">
           {count} threads will be permanently removed. This cannot be undone.
         </p>
         <div className="flex gap-2 justify-end">

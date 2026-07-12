@@ -11,7 +11,7 @@ export function InfoTip({ children, content, className }: { children: ReactNode;
       <Tooltip.Trigger render={<span />} className={cn("cursor-help", className)}>{children}</Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Positioner sideOffset={6} className="z-(--z-tooltip)">
-          <Tooltip.Popup className="max-w-[260px] rounded-md border border-(--color-border) bg-(--color-surface-1) px-2.5 py-1.5 text-[11px] leading-snug text-(--color-fg-muted) shadow-[0_8px_30px_rgb(0_0_0_/_0.35)]">
+          <Tooltip.Popup className="max-w-[260px] rounded-md border border-(--color-border) bg-(--color-surface-1) px-2.5 py-1.5 text-xs leading-snug text-(--color-fg-muted) shadow-[0_8px_30px_rgb(0_0_0_/_0.35)]">
             {content}
           </Tooltip.Popup>
         </Tooltip.Positioner>

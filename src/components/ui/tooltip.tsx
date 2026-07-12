@@ -9,7 +9,7 @@ export function TooltipContent({ className, children, ...props }: React.Componen
   return (
     <Base.Portal>
       <Base.Positioner sideOffset={6}>
-        <Base.Popup data-slot="tooltip-content" className={cn("rounded-md bg-(--color-surface-3) border border-(--color-border) px-2 py-1 text-[11px] text-(--color-fg)", className)} {...props}>
+        <Base.Popup data-slot="tooltip-content" className={cn("rounded-md bg-(--color-surface-3) border border-(--color-border) px-2 py-1 text-xs text-(--color-fg)", className)} {...props}>
           {children}
         </Base.Popup>
       </Base.Positioner>

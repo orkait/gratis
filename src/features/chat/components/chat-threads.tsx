@@ -78,7 +78,7 @@ function ThreadSection({
 }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-(--color-fg-subtle) px-2 py-1.5">
+      <div className="text-xs font-semibold uppercase tracking-wider text-(--color-fg-subtle) px-2 py-1.5">
         {group.label}
       </div>
       <div className="space-y-0.5">
@@ -130,7 +130,7 @@ const ThreadRow = memo(function ThreadRow({
         className="flex-1 min-w-0 px-2 h-9 flex items-center gap-2 text-left cursor-pointer"
       >
         <ProviderAvatar provider={providerNameForModel(thread.modelId)} size="xs" />
-        <span className="flex-1 truncate text-[13px]">{thread.title}</span>
+        <span className="flex-1 truncate text-sm">{thread.title}</span>
       </button>
       <button
         type="button"
@@ -146,7 +146,7 @@ const ThreadRow = memo(function ThreadRow({
 
 function EmptyThreads({ isSearching }: { isSearching: boolean }) {
   return (
-    <div className="px-3 py-6 text-center text-[12px] text-(--color-fg-subtle)">
+    <div className="px-3 py-6 text-center text-sm text-(--color-fg-subtle)">
       {isSearching ? "No matches" : "No chats yet. Click New chat above."}
     </div>
   );

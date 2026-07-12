@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { LENSES, VIEW_MODES, type LensSpec } from "../lib/lens-config";
 
 const VIEW_TOGGLE_CLASS = cn(
-  "h-6 px-2.5 rounded text-[10px] font-mono uppercase tracking-wide cursor-pointer transition-colors duration-150",
+  "h-6 px-2.5 rounded text-xs font-mono uppercase tracking-wide cursor-pointer transition-colors duration-150",
   "text-(--color-fg-subtle) hover:text-(--color-fg)",
   "data-[pressed]:bg-(--color-accent-soft) data-[pressed]:text-(--color-accent)",
 );
@@ -45,7 +45,7 @@ export function TaskLens() {
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[11px] font-mono uppercase tracking-[0.16em] text-(--color-fg-subtle)">
+        <div className="text-xs font-mono uppercase tracking-[0.16em] text-(--color-fg-subtle)">
           What are you building?
         </div>
 
@@ -82,11 +82,11 @@ function LensCard({ spec }: { spec: LensSpec }) {
     <Toggle value={spec.id} className={LENS_CARD_CLASS}>
       <div className="flex items-center gap-1.5">
         <Icon className="w-3.5 h-3.5 text-(--color-fg-subtle) group-data-[pressed]:text-(--color-accent)" />
-        <span className="text-[12px] font-medium text-(--color-fg) group-data-[pressed]:text-(--color-accent)">
+        <span className="text-sm font-medium text-(--color-fg) group-data-[pressed]:text-(--color-accent)">
           {spec.label}
         </span>
       </div>
-      <span className="text-[10px] font-mono text-(--color-fg-subtle)/80">{spec.hint}</span>
+      <span className="text-xs font-mono text-(--color-fg-subtle)/80">{spec.hint}</span>
     </Toggle>
   );
 }

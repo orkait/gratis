@@ -19,8 +19,8 @@ export function ChatGreeting({
         <Sparkles className="w-5 h-5" />
       </div>
       <div>
-        <h2 className="serif text-[30px] font-semibold">How can I help today?</h2>
-        <p className="text-[13px] text-(--color-fg-muted) mt-1">
+        <h2 className="serif text-4xl font-semibold">How can I help today?</h2>
+        <p className="text-sm text-(--color-fg-muted) mt-1">
           Connected to <span className="font-mono text-(--color-fg)">{modelId}</span>
         </p>
       </div>
@@ -46,7 +46,7 @@ const SuggestionButton = memo(function SuggestionButton({
     <button
       type="button"
       onClick={handleClick}
-      className="text-left text-[13px] text-(--color-fg-muted) hover:text-(--color-fg) bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-[120ms]"
+      className="text-left text-sm text-(--color-fg-muted) hover:text-(--color-fg) bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-[120ms]"
     >
       {suggestion}
     </button>

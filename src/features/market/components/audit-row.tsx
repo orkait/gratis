@@ -35,7 +35,7 @@ export const AuditRow = memo(function AuditRow({ model, rank, active, scoreKeys,
       onKeyDown={handleKeyDown}
       className={cn("cursor-pointer", active && "bg-(--color-accent-soft) border-l-2 border-l-(--color-accent)")}
     >
-      <TD className="text-right pr-4 font-mono text-[11px] text-(--color-fg-subtle)">{rank}</TD>
+      <TD className="text-right pr-4 font-mono text-xs text-(--color-fg-subtle)">{rank}</TD>
 
       <TD>
         <ModelCell model={model} showHonesty />
@@ -69,7 +69,7 @@ function TierCell({ model }: { model: ModelStats }) {
     <div className="flex flex-col gap-0.5">
       {model.is_free ? <Badge variant="success">FREE</Badge> : <Badge>PAID</Badge>}
       {!model.is_free && price ? (
-        <span className="text-[10px] font-mono text-(--color-fg-subtle) tabular-nums">{price}</span>
+        <span className="text-xs font-mono text-(--color-fg-subtle) tabular-nums">{price}</span>
       ) : null}
     </div>
   );
@@ -101,11 +101,11 @@ function CapabilityCell({ model }: { model: ModelStats }) {
 
 function ScoreCell({ value, headline }: { value: number | undefined; headline: boolean }) {
   const tone = headline
-    ? "text-(--color-accent) font-semibold text-[13px]"
+    ? "text-(--color-accent) font-semibold text-sm"
     : "text-(--color-fg-muted)";
 
   return (
-    <TD className={cn("text-right font-mono text-[12px] tabular-nums", tone)}>
+    <TD className={cn("text-right font-mono text-sm tabular-nums", tone)}>
       {value == null ? <span className="text-(--color-fg-disabled)">-</span> : value.toFixed(0)}
     </TD>
   );

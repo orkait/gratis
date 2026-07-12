@@ -27,8 +27,8 @@ export function ChatEmptyState({ models }: { models: ModelStats[] }) {
       <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--color-accent-soft) text-(--color-accent) mb-4">
         <Sparkles className="w-5 h-5" />
       </div>
-      <h2 className="serif text-[30px] font-semibold">Pick a model to start</h2>
-      <p className="text-[13px] text-(--color-fg-muted) mt-1 mb-6">
+      <h2 className="serif text-4xl font-semibold">Pick a model to start</h2>
+      <p className="text-sm text-(--color-fg-muted) mt-1 mb-6">
         300+ free models across 7 providers.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-[640px] w-full">
@@ -36,7 +36,7 @@ export function ChatEmptyState({ models }: { models: ModelStats[] }) {
           <ModelChoice key={model.id} model={model} onPick={handlePick} />
         ))}
       </div>
-      <div className="mt-6 text-[12px] text-(--color-fg-subtle)">
+      <div className="mt-6 text-sm text-(--color-fg-subtle)">
         Or browse the full{" "}
         <Link href={ROUTES.market} className="text-(--color-accent) underline underline-offset-2">
           model market
@@ -60,10 +60,10 @@ const ModelChoice = memo(function ModelChoice({
     <button
       type="button"
       onClick={handleClick}
-      className="text-left text-[13px] bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-[120ms]"
+      className="text-left text-sm bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-[120ms]"
     >
       <div className="font-mono text-(--color-fg) truncate">{model.id}</div>
-      <div className="text-[11px] text-(--color-fg-subtle) mt-0.5">
+      <div className="text-xs text-(--color-fg-subtle) mt-0.5">
         {model.provider} · score {model.balanced.toFixed(1)}
       </div>
     </button>

@@ -57,7 +57,7 @@ function DecisionTable({ rows, start, metricKey }: { rows: ModelStats[]; start: 
     <Table>
       <THead>
         <TR className="hover:bg-transparent">
-          <TH className="w-10 text-right pr-3 font-mono text-[10px]">#</TH>
+          <TH className="w-10 text-right pr-3 font-mono text-xs">#</TH>
           <TH>Model</TH>
           <TH className="w-36">{labelFor(metricKey)}</TH>
           <TH className="w-[280px]">Signals</TH>
@@ -104,7 +104,7 @@ function AuditTable({
     <Table>
       <THead>
         <TR className="hover:bg-transparent">
-          <TH className="w-12 text-right pr-4 font-mono text-[10px]">#</TH>
+          <TH className="w-12 text-right pr-4 font-mono text-xs">#</TH>
           <SortHead table={table} col="id" label="Model" />
           <SortHead table={table} col="is_free" label="Tier" />
           <SortHead table={table} col="caps" label="Caps" />
@@ -153,8 +153,8 @@ function EmptyFilters() {
     <div className="h-[400px] flex flex-col items-center justify-center text-(--color-fg-subtle) gap-3">
       <Ghost className="w-8 h-8" />
       <div className="text-center">
-        <div className="text-[14px] font-medium text-(--color-fg-muted)">No models match your filters</div>
-        <div className="text-[12px] mt-1">Try resetting filters in the sidebar</div>
+        <div className="text-base font-medium text-(--color-fg-muted)">No models match your filters</div>
+        <div className="text-sm mt-1">Try resetting filters in the sidebar</div>
       </div>
     </div>
   );

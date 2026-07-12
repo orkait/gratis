@@ -16,9 +16,9 @@ const FALLBACK_HUES = [340, 25, 60, 95, 130, 175, 210, 250, 290, 315];
 
 /** Lookup instead of a nested ternary: a new size is a new entry, not another `? :`. */
 const SIZE_CLASS = {
-  xs: "w-3.5 h-3.5 text-[8px]",
-  sm: "w-4 h-4 text-[9px]",
-  md: "w-5 h-5 text-[10px]",
+  xs: "w-3.5 h-3.5 text-2xs",
+  sm: "w-4 h-4 text-2xs",
+  md: "w-5 h-5 text-xs",
 } as const;
 
 function colorForProvider(provider: string): string {

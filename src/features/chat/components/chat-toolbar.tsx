@@ -34,7 +34,7 @@ export function ChatToolbar({
         disabled={disabled}
       />
       {showForkHint && (
-        <span className="text-[10px] text-(--color-fg-subtle) font-mono">
+        <span className="text-xs text-(--color-fg-subtle) font-mono">
           switch model to continue in a new thread
         </span>
       )}

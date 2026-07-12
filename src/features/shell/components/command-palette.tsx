@@ -138,7 +138,7 @@ export function CommandPalette({ models }: { models: ModelStats[] }) {
               ))}
             </CommandGroup>
           </CommandList>
-          <div className="h-9 border-t border-(--color-border) px-3 flex items-center justify-end gap-3 text-[10px] text-(--color-fg-subtle)">
+          <div className="h-9 border-t border-(--color-border) px-3 flex items-center justify-end gap-3 text-xs text-(--color-fg-subtle)">
             <span className="flex items-center gap-1"><Kbd>{"↑"}</Kbd><Kbd>{"↓"}</Kbd> navigate</span>
             <span className="flex items-center gap-1"><Kbd>{"↵"}</Kbd> select</span>
             <span className="flex items-center gap-1"><Kbd>esc</Kbd> close</span>
@@ -168,7 +168,7 @@ function RecentChatItem({
     >
       <History className="w-3.5 h-3.5" />
       <span className="flex-1 truncate">{thread.title}</span>
-      <span className="text-[10px] font-mono text-(--color-fg-subtle) truncate max-w-[140px]">
+      <span className="text-xs font-mono text-(--color-fg-subtle) truncate max-w-[140px]">
         {thread.modelId}
       </span>
     </CommandItem>
@@ -190,7 +190,7 @@ function ModelItem({
     <CommandItem className={itemClass} value={model.id} onSelect={handleSelect}>
       <Eye className="w-3.5 h-3.5" />
       <span className="flex-1 truncate">{model.id}</span>
-      <span className="text-[10px] font-mono text-(--color-fg-subtle)">{model.provider}</span>
+      <span className="text-xs font-mono text-(--color-fg-subtle)">{model.provider}</span>
     </CommandItem>
   );
 }

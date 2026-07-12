@@ -55,7 +55,7 @@ export function MarketFilters() {
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-(--color-fg-subtle) px-1">{label}</div>
+      <div className="text-xs font-semibold uppercase tracking-wider text-(--color-fg-subtle) px-1">{label}</div>
       <div className="space-y-1.5">{children}</div>
     </div>
   );
@@ -78,7 +78,7 @@ function FilterToggle({ spec, checked, onToggle }: { spec: ToggleSpec; checked: 
       onClick={handleClick}
       className="w-full h-8 px-3 rounded-md flex items-center justify-between hover:bg-(--color-surface-1) transition-colors duration-[120ms] cursor-pointer"
     >
-      <span className="text-[13px] text-(--color-fg)">{spec.label}</span>
+      <span className="text-sm text-(--color-fg)">{spec.label}</span>
       <span className={cn("relative inline-flex h-[18px] w-[30px] items-center rounded-full transition-colors duration-[120ms]", trackColor)}>
         <span className={cn("inline-block h-3 w-3 rounded-full bg-white transition-transform duration-[120ms]", knobPosition)} />
       </span>
@@ -98,7 +98,7 @@ function CapabilityChip({ spec, active, onToggle }: { spec: ChipSpec; active: bo
       type="button"
       onClick={handleClick}
       aria-pressed={active}
-      className={cn("h-8 px-2 rounded-md flex items-center justify-center gap-1.5 text-[12px] font-medium transition-colors duration-[120ms] cursor-pointer border", tone)}
+      className={cn("h-8 px-2 rounded-md flex items-center justify-center gap-1.5 text-sm font-medium transition-colors duration-[120ms] cursor-pointer border", tone)}
     >
       <Icon className="w-3 h-3" />
       {spec.label}
@@ -111,7 +111,7 @@ function RangeSlider({ spec, value, onChange }: { spec: SliderSpec; value: numbe
 
   return (
     <div className="space-y-1.5 px-1">
-      <div className="flex justify-between text-[11px]">
+      <div className="flex justify-between text-xs">
         <span className="text-(--color-fg-muted)">{spec.label}</span>
         <span className="font-mono text-(--color-accent)">
           {spec.display(value)}

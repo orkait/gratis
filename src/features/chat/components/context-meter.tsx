@@ -47,7 +47,7 @@ export function ContextMeter({ used, max, estimated, className }: ContextMeterPr
     return (
       <div
         className={cn(
-          "flex items-center gap-1.5 text-[11px] font-mono",
+          "flex items-center gap-1.5 text-xs font-mono",
           TEXT_TONE.idle,
           className,
         )}
@@ -66,7 +66,7 @@ export function ContextMeter({ used, max, estimated, className }: ContextMeterPr
 
   return (
     <div
-      className={cn("flex items-center gap-1.5 text-[11px] font-mono", className)}
+      className={cn("flex items-center gap-1.5 text-xs font-mono", className)}
       title={`Context${qualifier}: ${formatTokens(used)} / ${formatTokens(max)} (${percent.toFixed(0)}%)`}
     >
       <Donut percent={percent} state={state} />

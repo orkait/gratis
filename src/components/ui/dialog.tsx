@@ -23,9 +23,9 @@ export function DialogContent({ className, children, ...props }: React.Component
   );
 }
 export function DialogTitle({ className, ...props }: React.ComponentProps<typeof Base.Title>) {
-  return <Base.Title data-slot="dialog-title" className={cn("text-[18px] font-semibold tracking-tight", className)} {...props} />;
+  return <Base.Title data-slot="dialog-title" className={cn("text-xl font-semibold tracking-tight", className)} {...props} />;
 }
 export function DialogDescription({ className, ...props }: React.ComponentProps<typeof Base.Description>) {
-  return <Base.Description data-slot="dialog-description" className={cn("text-[13px] text-(--color-fg-muted)", className)} {...props} />;
+  return <Base.Description data-slot="dialog-description" className={cn("text-sm text-(--color-fg-muted)", className)} {...props} />;
 }
 export const DialogClose = Base.Close;

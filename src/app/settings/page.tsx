@@ -27,7 +27,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell title="API keys" width="prose" actions={<ShellStatus onHelpClick={openHelp} />}>
-      <p className="text-[13px] text-(--color-fg-muted)">
+      <p className="text-sm text-(--color-fg-muted)">
         Your provider keys, encrypted in this browser with your passphrase. They are sent with your
         requests and are never stored on any server.
       </p>

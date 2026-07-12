@@ -66,7 +66,7 @@ export function AppShell({
           <div className="w-6 h-6 rounded-md bg-(--color-accent) flex items-center justify-center">
             <Zap className="w-3.5 h-3.5 text-(--color-accent-fg)" strokeWidth={2.5} />
           </div>
-          <span className="text-[14px] font-semibold tracking-tight">Gratis</span>
+          <span className="text-base font-semibold tracking-tight">Gratis</span>
         </div>
 
         <nav className="p-3 space-y-0.5">
@@ -78,7 +78,7 @@ export function AppShell({
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "h-8 px-3 rounded-md flex items-center gap-2 text-[13px] transition-colors duration-[120ms]",
+                  "h-8 px-3 rounded-md flex items-center gap-2 text-sm transition-colors duration-[120ms]",
                   active
                     ? "bg-(--color-accent-soft) text-(--color-accent) font-medium"
                     : "text-(--color-fg-muted) hover:bg-(--color-surface-1) hover:text-(--color-fg)",
@@ -104,8 +104,8 @@ export function AppShell({
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-12 sticky top-0 z-(--z-sticky) bg-(--color-bg)/80 backdrop-blur-md border-b border-(--color-border) flex items-center px-4 gap-4">
           <div className="flex items-baseline gap-2 shrink-0">
-            <h1 className="text-[14px] font-semibold tracking-tight">{title}</h1>
-            {meta ? <span className="text-[11px] font-mono text-(--color-fg-subtle)">{meta}</span> : null}
+            <h1 className="text-base font-semibold tracking-tight">{title}</h1>
+            {meta ? <span className="text-xs font-mono text-(--color-fg-subtle)">{meta}</span> : null}
           </div>
 
           <button
@@ -114,7 +114,7 @@ export function AppShell({
             className="flex-1 max-w-md mx-auto h-7 flex items-center gap-2 px-2.5 rounded-md bg-(--color-surface-1) border border-(--color-border) text-(--color-fg-subtle) hover:border-(--color-border-strong) transition-colors duration-[120ms] cursor-pointer"
           >
             <Search className="w-3 h-3" />
-            <span className="flex-1 text-left text-[12px]">Search models, providers, actions...</span>
+            <span className="flex-1 text-left text-sm">Search models, providers, actions...</span>
             <Kbd>{"⌘"}</Kbd>
             <Kbd>K</Kbd>
           </button>
@@ -144,7 +144,7 @@ export function ShellStatus({ onHelpClick }: { onHelpClick: () => void }) {
           <span className="absolute inline-flex h-full w-full rounded-full bg-(--color-success) opacity-60 animate-ping" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-(--color-success)" />
         </span>
-        <span className="text-[10px] font-mono text-(--color-fg-muted)">live</span>
+        <span className="text-xs font-mono text-(--color-fg-muted)">live</span>
       </div>
       <Button variant="ghost" size="icon" onClick={onHelpClick} aria-label="Keyboard shortcuts">
         <HelpCircle className="w-3.5 h-3.5" />

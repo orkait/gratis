@@ -23,13 +23,13 @@ export function TablePagination({ start, end, total, page, totalPages, pageSize,
 
   return (
     <div className="h-12 px-4 border-t border-(--color-border) flex items-center justify-between gap-4 bg-(--color-bg)">
-      <div className="text-[11px] font-mono text-(--color-fg-subtle) tabular-nums">
+      <div className="text-xs font-mono text-(--color-fg-subtle) tabular-nums">
         {start + 1}-{end} of {total}
       </div>
 
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-(--color-fg-subtle)">Rows</span>
+          <span className="text-xs text-(--color-fg-subtle)">Rows</span>
           {PAGE_SIZES.map((size) => (
             <PageSizeButton key={size} size={size} active={pageSize === size} onSelect={onSize} />
           ))}
@@ -41,7 +41,7 @@ export function TablePagination({ start, end, total, page, totalPages, pageSize,
           <Button variant="ghost" size="icon" onClick={goPrev} disabled={page <= 1} aria-label="Previous page">
             <ChevronLeft className="w-3.5 h-3.5" />
           </Button>
-          <span className="text-[11px] font-mono tabular-nums text-(--color-fg-muted) min-w-[60px] text-center">
+          <span className="text-xs font-mono tabular-nums text-(--color-fg-muted) min-w-[60px] text-center">
             {page} / {totalPages}
           </span>
           <Button variant="ghost" size="icon" onClick={goNext} disabled={page >= totalPages} aria-label="Next page">
@@ -73,7 +73,7 @@ function PageSizeButton({
       type="button"
       onClick={handleClick}
       aria-pressed={active}
-      className={cn("h-6 px-2 rounded text-[11px] font-mono cursor-pointer transition-colors duration-[120ms]", tone)}
+      className={cn("h-6 px-2 rounded text-xs font-mono cursor-pointer transition-colors duration-[120ms]", tone)}
     >
       {size}
     </button>

@@ -19,7 +19,7 @@ export function VaultUnlock({ passphrase, error, onPassphraseChange, onSubmit }:
 
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-3">
-      <label htmlFor="vault-passphrase" className="block text-[13px] font-medium">
+      <label htmlFor="vault-passphrase" className="block text-sm font-medium">
         Passphrase
       </label>
       <Input
@@ -31,7 +31,7 @@ export function VaultUnlock({ passphrase, error, onPassphraseChange, onSubmit }:
         placeholder="Unlock your vault"
         className="h-9 font-mono"
       />
-      {error ? <div className="text-[12px] text-(--color-danger)">{error}</div> : null}
+      {error ? <div className="text-sm text-(--color-danger)">{error}</div> : null}
       <Button type="submit" variant="outline" size="lg">
         <LockOpen className="w-3.5 h-3.5" /> Unlock
       </Button>

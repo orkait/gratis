@@ -51,7 +51,7 @@ export const DecisionRow = memo(function DecisionRow({
       onKeyDown={handleKeyDown}
       className={cn("cursor-pointer", active && "bg-(--color-accent-soft) border-l-2 border-l-(--color-accent)")}
     >
-      <TD className="text-right pr-3 font-mono text-[11px] text-(--color-fg-subtle) tabular-nums">{rank}</TD>
+      <TD className="text-right pr-3 font-mono text-xs text-(--color-fg-subtle) tabular-nums">{rank}</TD>
 
       <TD>
         <ModelCell model={model} showHonesty />
@@ -59,7 +59,7 @@ export const DecisionRow = memo(function DecisionRow({
 
       <TD>
         <div className="flex items-center gap-2">
-          <span className="text-[18px] leading-none font-semibold tabular-nums text-(--color-accent) w-8 text-right">
+          <span className="text-xl leading-none font-semibold tabular-nums text-(--color-accent) w-8 text-right">
             {formatScore(headline)}
           </span>
           <div className="flex-1">
@@ -83,7 +83,7 @@ export const DecisionRow = memo(function DecisionRow({
       <TD className="text-right">
         <span
           className={cn(
-            "text-[11px] font-mono tabular-nums",
+            "text-xs font-mono tabular-nums",
             model.is_free ? "text-(--color-success)" : "text-(--color-fg-muted)",
           )}
         >
@@ -109,8 +109,8 @@ function SignalMeter({ label, value }: { label: string; value: number | undefine
   return (
     <div className="w-14">
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[8px] font-mono uppercase tracking-wide text-(--color-fg-subtle)/70">{label}</span>
-        <span className="text-[9px] font-mono tabular-nums text-(--color-fg-muted)">{formatScore(value)}</span>
+        <span className="text-2xs font-mono uppercase tracking-wide text-(--color-fg-subtle)/70">{label}</span>
+        <span className="text-2xs font-mono tabular-nums text-(--color-fg-muted)">{formatScore(value)}</span>
       </div>
       <ScoreBar value={value} tone="muted" />
     </div>
@@ -120,17 +120,17 @@ function SignalMeter({ label, value }: { label: string; value: number | undefine
 /** Benchmark composite (B) against human-preference Elo (H) - the honest triangulation. */
 function PreferenceSplit({ model }: { model: ModelStats }) {
   if (model.preference == null) {
-    return <span className="text-[10px] font-mono text-(--color-fg-subtle)/50">no votes</span>;
+    return <span className="text-xs font-mono text-(--color-fg-subtle)/50">no votes</span>;
   }
 
   return (
     <div className="space-y-1 w-24">
       <div className="flex items-center gap-1.5">
-        <span className="text-[8px] font-mono w-2.5 text-(--color-fg-subtle)">B</span>
+        <span className="text-2xs font-mono w-2.5 text-(--color-fg-subtle)">B</span>
         <ScoreBar value={model.scores?.overall} tone="accent" />
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="text-[8px] font-mono w-2.5 text-(--color-fg-subtle)">H</span>
+        <span className="text-2xs font-mono w-2.5 text-(--color-fg-subtle)">H</span>
         <ScoreBar value={model.preference} tone="human" />
       </div>
     </div>

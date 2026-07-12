@@ -39,7 +39,7 @@ export function ChatComposer({
           onKeyDown={handleKeyDown}
           placeholder={`Message ${modelId}...`}
           rows={1}
-          className="flex-1 resize-none bg-(--color-surface-1) border border-(--color-border) rounded-md px-3 py-2 text-[13px] outline-none focus:border-(--color-accent) max-h-[200px]"
+          className="flex-1 resize-none bg-(--color-surface-1) border border-(--color-border) rounded-md px-3 py-2 text-sm outline-none focus:border-(--color-accent) max-h-[200px]"
         />
         {isBusy ? (
           <Button onClick={onStop} variant="outline" aria-label="Stop">

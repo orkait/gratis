@@ -45,8 +45,8 @@ export function DetailDrawer({ models }: { models: ModelStats[] }) {
                 <div className="flex items-center gap-2.5 min-w-0">
                   <ProviderAvatar provider={model.provider} size="md" />
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <Dialog.Title className="text-[14px] font-semibold truncate">{model.id}</Dialog.Title>
-                    <Dialog.Description className="text-[11px] text-(--color-fg-muted)">{model.provider}</Dialog.Description>
+                    <Dialog.Title className="text-base font-semibold truncate">{model.id}</Dialog.Title>
+                    <Dialog.Description className="text-xs text-(--color-fg-muted)">{model.provider}</Dialog.Description>
                   </div>
                 </div>
                 <Dialog.Close render={<Button variant="ghost" size="icon" aria-label="Close"><X className="w-4 h-4" /></Button>} />
@@ -60,7 +60,7 @@ export function DetailDrawer({ models }: { models: ModelStats[] }) {
                         key={t}
                         value={t}
                         className={cn(
-                          "h-7 px-3 rounded text-[12px] capitalize cursor-pointer transition-colors duration-150",
+                          "h-7 px-3 rounded text-sm capitalize cursor-pointer transition-colors duration-150",
                           "text-(--color-fg-subtle) hover:text-(--color-fg)",
                           "data-[active]:bg-(--color-surface-1) data-[active]:text-(--color-accent) data-[active]:shadow-sm",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-accent)/40",
@@ -74,14 +74,14 @@ export function DetailDrawer({ models }: { models: ModelStats[] }) {
                   <Tabs.Panel value="overview" className="focus:outline-none">
                     <div className="grid grid-cols-2 gap-3">
                       <Stat label="Tier" value={model.is_free ? <Badge variant="success">FREE</Badge> : <Badge>PAID</Badge>} />
-                      <Stat label="Overall" value={<span className="font-mono text-(--color-accent) text-[14px] font-semibold">{(model.scores?.overall ?? model.balanced).toFixed(1)}</span>} />
+                      <Stat label="Overall" value={<span className="font-mono text-(--color-accent) text-base font-semibold">{(model.scores?.overall ?? model.balanced).toFixed(1)}</span>} />
                       <Stat label="Intelligence" value={model.scores?.intelligence != null ? model.scores.intelligence.toFixed(0) : "-"} />
                       <Stat label="Confidence" value={model.confidence ?? "-"} />
                       <Stat label="Context" value={`${(model.ctx / 1000).toFixed(0)}K`} />
                       <Stat label="TPS" value={model.tps != null ? model.tps.toFixed(1) : "-"} />
                     </div>
                     {model.arena_elo != null && (
-                      <div className="mt-3 rounded-md bg-(--color-surface-2) px-3 py-2.5 text-[12px] text-(--color-fg-muted)">
+                      <div className="mt-3 rounded-md bg-(--color-surface-2) px-3 py-2.5 text-sm text-(--color-fg-muted)">
                         Human preference (LMArena Elo): <span className="font-mono text-(--color-fg)">{model.arena_elo}</span>
                         {model.divergence === "human-favored" && <span className="text-(--color-success)"> · humans rate it above its benchmarks</span>}
                         {model.divergence === "bench-favored" && <span className="text-(--color-warning)"> · benchmarks rate it above human preference</span>}
@@ -109,7 +109,7 @@ print(r.choices[0].message.content)`} />
                   </Tabs.Panel>
 
                   <Tabs.Panel value="metrics" className="focus:outline-none">
-                    <div className="text-[13px] text-(--color-fg-muted) leading-relaxed">
+                    <div className="text-sm text-(--color-fg-muted) leading-relaxed">
                       Provider: <span className="text-(--color-fg)">{model.provider}</span><br />
                       Benchmarks used: <span className="font-mono text-(--color-fg)">{model.bench_count ?? 0}</span><br />
                       Cross-benchmark agreement: <span className="font-mono text-(--color-fg)">{model.consensus != null ? `${model.consensus.toFixed(0)}%` : "-"}</span><br />
@@ -136,8 +136,8 @@ print(r.choices[0].message.content)`} />
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-md bg-(--color-surface-2) px-3 py-2.5">
-      <div className="text-[10px] uppercase tracking-wider text-(--color-fg-subtle) font-semibold">{label}</div>
-      <div className="mt-1 text-[13px] text-(--color-fg)">{value}</div>
+      <div className="text-xs uppercase tracking-wider text-(--color-fg-subtle) font-semibold">{label}</div>
+      <div className="mt-1 text-sm text-(--color-fg)">{value}</div>
     </div>
   );
 }
@@ -152,12 +152,12 @@ function CodeBlock({ label, code }: { label: string; code: string }) {
   return (
     <div className="mb-3">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] uppercase tracking-wider text-(--color-fg-subtle) font-semibold">{label}</span>
+        <span className="text-xs uppercase tracking-wider text-(--color-fg-subtle) font-semibold">{label}</span>
         <Button variant="ghost" size="sm" onClick={onCopy}>
           <Copy className="w-3 h-3" /> {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-      <pre className="rounded-md bg-(--color-surface-2) border border-(--color-border) p-3 overflow-x-auto text-[12px] font-mono text-(--color-fg) leading-relaxed">{code}</pre>
+      <pre className="rounded-md bg-(--color-surface-2) border border-(--color-border) p-3 overflow-x-auto text-sm font-mono text-(--color-fg) leading-relaxed">{code}</pre>
     </div>
   );
 }

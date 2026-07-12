@@ -47,15 +47,15 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
     <div className="relative overflow-hidden rounded-lg border border-(--color-border) bg-(--color-surface-1) px-4 py-3">
       <div className={cn("absolute inset-x-0 top-0 h-[2px]", RULE_COLOR[kpi.tone])} />
 
-      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-(--color-fg-subtle)">
+      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-(--color-fg-subtle)">
         {kpi.label}
       </div>
 
       <div className="mt-1 flex items-baseline gap-1.5">
-        <span className={cn("text-[26px] leading-none font-mono font-semibold tabular-nums", VALUE_COLOR[kpi.tone])}>
+        <span className={cn("text-3xl leading-none font-mono font-semibold tabular-nums", VALUE_COLOR[kpi.tone])}>
           {kpi.value}
         </span>
-        {kpi.sub ? <span className="text-[11px] font-mono text-(--color-fg-subtle)">{kpi.sub}</span> : null}
+        {kpi.sub ? <span className="text-xs font-mono text-(--color-fg-subtle)">{kpi.sub}</span> : null}
       </div>
     </div>
   );

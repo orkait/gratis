@@ -44,12 +44,12 @@ const MessageRow = memo(function MessageRow({
         )}
       </div>
       {isUser ? (
-        <div className="max-w-[85%] rounded-[18px] px-4 py-2.5 text-[15px] leading-relaxed bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap">
+        <div className="max-w-[85%] rounded-[18px] px-4 py-2.5 text-lg leading-relaxed bg-(--color-accent-soft) text-(--color-fg) whitespace-pre-wrap">
           {content}
         </div>
       ) : (
         // Editorial: assistant replies read like prose, not a chat bubble.
-        <div className="max-w-[65ch] min-w-0 pt-1 text-[16px] leading-[1.75] text-(--color-fg)">
+        <div className="max-w-[65ch] min-w-0 pt-1 text-lg leading-[1.75] text-(--color-fg)">
           <ChatMarkdown content={content} />
         </div>
       )}
@@ -76,7 +76,7 @@ export function TypingIndicator() {
 
 export function ChatError({ message }: { message: string }) {
   return (
-    <div className="text-[13px] text-(--color-danger) bg-(--color-danger-soft) rounded-lg px-4 py-2.5">
+    <div className="text-sm text-(--color-danger) bg-(--color-danger-soft) rounded-lg px-4 py-2.5">
       <strong>Error:</strong> {message}
     </div>
   );

@@ -61,7 +61,7 @@ export function ModelPickerInline({
         disabled={disabled}
         onClick={handleOpen}
         className={cn(
-          "h-8 px-2.5 rounded-md flex items-center gap-2 text-[12px] border border-(--color-border) bg-(--color-surface-1) hover:bg-(--color-surface-2) cursor-pointer transition-colors duration-[120ms]",
+          "h-8 px-2.5 rounded-md flex items-center gap-2 text-sm border border-(--color-border) bg-(--color-surface-1) hover:bg-(--color-surface-2) cursor-pointer transition-colors duration-[120ms]",
           disabled && "opacity-50 cursor-not-allowed",
         )}
       >

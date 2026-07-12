@@ -49,7 +49,7 @@ export function VaultKeyForm({
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
       <div>
-        <label htmlFor="vault-passphrase" className="block text-[13px] font-medium">
+        <label htmlFor="vault-passphrase" className="block text-sm font-medium">
           Passphrase{" "}
           {unlocked ? (
             <span className="text-(--color-fg-subtle) font-normal">
@@ -78,7 +78,7 @@ export function VaultKeyForm({
         ))}
       </div>
 
-      {error ? <div className="text-[12px] text-(--color-danger)">{error}</div> : null}
+      {error ? <div className="text-sm text-(--color-danger)">{error}</div> : null}
 
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" variant="outline" size="lg">
@@ -92,7 +92,7 @@ export function VaultKeyForm({
         <Button type="button" variant="outline" size="lg" onClick={onDestroy} className="ml-auto">
           <Trash2 className="w-3.5 h-3.5" /> Delete vault
         </Button>
-        {saved ? <span className="text-[12px] text-(--color-success)">Saved</span> : null}
+        {saved ? <span className="text-sm text-(--color-success)">Saved</span> : null}
       </div>
     </form>
   );
@@ -116,7 +116,7 @@ function VaultKeyField({
 
   return (
     <div>
-      <label htmlFor={inputId} className="block text-[13px] font-medium">
+      <label htmlFor={inputId} className="block text-sm font-medium">
         {field.label}
       </label>
       <Input
