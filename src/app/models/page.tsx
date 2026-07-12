@@ -51,10 +51,12 @@ export default function ModelsPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <Header count={filtered.length} onHelpClick={() => setHelpOpen(true)} />
         <main className="flex-1 overflow-auto p-6">
-          <KpiStrip models={filtered} loading={isLoading} />
-          <ProviderChips />
-          <TaskLens />
-          <ModelTable models={filtered} loading={isLoading} />
+          <div className="mx-auto w-full max-w-(--width-market)">
+            <KpiStrip models={filtered} loading={isLoading} />
+            <ProviderChips />
+            <TaskLens />
+            <ModelTable models={filtered} loading={isLoading} />
+          </div>
         </main>
       </div>
       <DetailDrawer models={models} />
