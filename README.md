@@ -48,6 +48,7 @@ python dev.py                      # backend :3460, UI :3470
 | `python dev.py build` | next build |
 | `python dev.py docker up` | docker compose up --build (`--minimal` for the 256MB backend-only image) |
 | `python dev.py docker down` | stop the compose stack (`logs`, `ps` also work) |
+| `python dev.py deploy` | backend → Railway, UI → Cloudflare Workers (`deploy ui` / `deploy backend` to narrow) |
 
 | Flag | What it does |
 |---|---|
@@ -55,8 +56,36 @@ python dev.py                      # backend :3460, UI :3470
 | `--no-install` | skip the dep install, for fast restarts |
 | `--backend-port N`, `--ui-port N` | move a service off its default port |
 | `--force-port` | kill whatever holds the port, even if it is not Gratis |
+| `--allow-dirty` | deploy a tree that is dirty or unpushed |
 
 If a port is held by something outside this repo, `dev.py` names the process and stops rather than killing it.
+
+</details>
+
+<details>
+<summary><b>🚀 Deploying</b></summary>
+
+```bash
+python dev.py deploy          # both
+python dev.py deploy ui       # frontend only
+```
+
+The backend URL is **compiled into the client bundle**, so a build that forgets `NEXT_PUBLIC_API_BASE_URL` inlines the localhost dev default and the deployed site talks to a laptop. `dev.py deploy` removes the chance to get that wrong: it asks Railway for the service's public domain, builds against it, and refuses to upload a bundle that does not contain it or that still mentions localhost.
+
+| Step | Behaviour |
+|---|---|
+| Preflight | A dirty or unpushed tree does not reach prod |
+| Railway | Waits for the build. A failed build leaves prod on the old version, and says so |
+| Bundle check | Deploy is aborted if the compiled bundle points anywhere but the real backend |
+| Cloudflare | `wrangler` prefers `CLOUDFLARE_API_TOKEN` over an OAuth login, so a stale one in your shell breaks every deploy. It is verified, and ignored when Cloudflare rejects it |
+| Retries | Cloudflare's API answering 5xx is retried; a rejected credential is not |
+| Verify | Backend `/health` and a 200 from the published route, after the deploy |
+
+| Variable | Default |
+|---|---|
+| `RAILWAY_SERVICE` | `gratis-backend` |
+| `PROD_API_BASE_URL` | asked of Railway |
+| `PROD_SITE_URL` | the route in `wrangler.jsonc` |
 
 </details>
 
