@@ -54,3 +54,7 @@ backend/.env
 
 # runtime model-availability verdicts (learned, not maintained)
 backend/availability.db
+
+# cloudflare / opennext build output
+.open-next/
+.wrangler/

@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gratis",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-12",
+  // Required by @opennextjs/cloudflare: Next needs Node built-ins in the workerd runtime.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
