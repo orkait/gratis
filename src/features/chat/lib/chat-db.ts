@@ -1,6 +1,7 @@
 "use client";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import { DATABASES } from "@/config/storage";
+import { POOL_MODEL_ID } from "@/config/models";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -90,13 +91,30 @@ export async function createThread(modelId: string): Promise<ChatThread> {
 
 export async function getThread(id: string): Promise<ChatThread | undefined> {
   const db = await getDb();
-  return db.get(STORE, id);
+  const raw = await db.get(STORE, id);
+  // Same normalization as listThreads: resuming a legacy thread must not crash the chat either.
+  return raw ? normalizeThread(raw) : undefined;
+}
+
+/** Records written by older builds are not guaranteed to match the current type. TypeScript cannot
+ *  enforce anything about bytes that were on disk before this code existed, so every row is
+ *  normalized on the way OUT of the database rather than trusted.
+ *
+ *  This is not hypothetical: a thread missing `modelId` made providerForModel() throw on
+ *  `.startsWith`, which unmounted the whole archive and left a blank screen. */
+function normalizeThread(raw: ChatThread): ChatThread {
+  return {
+    ...raw,
+    modelId: raw.modelId || POOL_MODEL_ID,
+    title: raw.title || TITLE.fallback,
+    messages: Array.isArray(raw.messages) ? raw.messages : [],
+  };
 }
 
 export async function listThreads(): Promise<ChatThread[]> {
   const db = await getDb();
   const all = await db.getAllFromIndex(STORE, INDEXES.updatedAt);
-  return all.reverse();
+  return all.reverse().map(normalizeThread);
 }
 
 export async function updateThread(
