@@ -24,6 +24,8 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -53,7 +55,10 @@ DEFAULT_UI_PORT = int(os.environ.get("UI_PORT", "3470"))
 DEFAULT_ENV_FILE = ".env.local"
 
 SERVICES = ("backend", "ui")
-COMMANDS = ("up", "test", "lint", "build", "docker")
+COMMANDS = ("up", "test", "lint", "build", "docker", "deploy")
+
+RAILWAY_SERVICE = os.environ.get("RAILWAY_SERVICE", "gratis-backend")
+CF_TOKEN_VERIFY = "https://api.cloudflare.com/client/v4/user/tokens/verify"
 
 HELP = f"""{BOLD}Gratis local stack{RESET}
 
@@ -62,6 +67,7 @@ HELP = f"""{BOLD}Gratis local stack{RESET}
   python dev.py lint                 eslint
   python dev.py build                next build
   python dev.py docker up|down|logs|ps
+  python dev.py deploy [SERVICE]     backend → Railway, ui → Cloudflare Workers
 
 {BOLD}Services{RESET}
   backend    FastAPI + uvicorn, port {DEFAULT_BACKEND_PORT}
@@ -74,6 +80,7 @@ HELP = f"""{BOLD}Gratis local stack{RESET}
   --ui-port N            override ui port
   --force-port           kill a port holder even if it is not from this repo
   --minimal              docker up: use docker-compose.minimal.yml
+  --allow-dirty          deploy: allow a dirty or unpushed tree
   -h, --help             this
 
 {BOLD}Examples{RESET}
@@ -81,6 +88,8 @@ HELP = f"""{BOLD}Gratis local stack{RESET}
   python dev.py ui --no-install      ui only, fast restart
   python dev.py backend -e prod      backend on .env.prod
   python dev.py test backend         pytest only
+  python dev.py deploy               ship both to prod
+  python dev.py deploy ui            ship the frontend only
 """
 
 
@@ -108,6 +117,7 @@ class Args:
         self.ui_port = DEFAULT_UI_PORT
         self.minimal = False
         self.force_port = False
+        self.allow_dirty = False
 
 
 def parse_args(argv: list[str]) -> Args:
@@ -136,6 +146,9 @@ def parse_args(argv: list[str]) -> Args:
             i += 1
         elif a == "--force-port":
             args.force_port = True
+            i += 1
+        elif a == "--allow-dirty":
+            args.allow_dirty = True
             i += 1
         elif a in ("--backend-port", "--ui-port"):
             if i + 1 >= len(argv):
@@ -611,6 +624,201 @@ def cmd_build(args: Args) -> None:
     print(f"{GREEN}✓ build complete{RESET}")
 
 
+def http_get(url: str, headers: dict[str, str] | None = None, timeout: int = 20) -> tuple[int, str]:
+    req = urllib.request.Request(url, headers=headers or {})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", "replace")
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        return 0, str(e)
+
+
+def capture(cmd: list[str], cwd: Path, env: dict[str, str] | None = None) -> tuple[int, str]:
+    p = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, env=env)
+    return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+
+def deploy_preflight(args: Args) -> None:
+    """Whatever is in the working tree is what ships. If that is not what is on
+    the default branch, say so before it reaches users, not after."""
+    if args.allow_dirty:
+        return
+    _, dirty = capture(["git", "status", "--porcelain"], ROOT)
+    if dirty.strip():
+        die("working tree is dirty; prod would ship code that is not committed.\n"
+            "  commit it, or deploy anyway with --allow-dirty")
+    _, branch = capture(["git", "rev-parse", "--abbrev-ref", "HEAD"], ROOT)
+    _, ahead = capture(["git", "log", "--oneline", "@{upstream}..HEAD"], ROOT)
+    if ahead.strip():
+        die(f"'{branch.strip()}' has commits that are not pushed; prod would ship code nobody can review.\n"
+            "  push them, or deploy anyway with --allow-dirty")
+
+
+def railway_backend_domain() -> str:
+    railway = require_tool(
+        "railway",
+        "npm i -g @railway/cli   (then: railway login && railway link)",
+        "npm i -g @railway/cli   (then: railway login && railway link)",
+    )
+    code, out = capture(
+        [railway, "variables", "--service", RAILWAY_SERVICE, "--json"], ROOT
+    )
+    if code != 0:
+        die(f"railway could not read service '{RAILWAY_SERVICE}'.\n"
+            f"  link the project first: railway link\n{out.strip()}")
+    try:
+        domain = json.loads(out).get("RAILWAY_PUBLIC_DOMAIN", "")
+    except ValueError:
+        domain = ""
+    if not domain:
+        die(f"service '{RAILWAY_SERVICE}' has no RAILWAY_PUBLIC_DOMAIN.\n"
+            f"  generate a domain for it, or set PROD_API_BASE_URL yourself")
+    return domain
+
+
+def prod_api_base() -> str:
+    """The URL the client bundle is compiled against. Asked of Railway rather
+    than hardcoded or left to an env var somebody forgets: a build that misses
+    it silently bakes in localhost and the deployed site talks to nothing."""
+    override = os.environ.get("PROD_API_BASE_URL", "").rstrip("/")
+    if override:
+        step(f"API base (PROD_API_BASE_URL): {override}")
+        return override
+    url = f"https://{railway_backend_domain()}"
+    step(f"API base (railway {RAILWAY_SERVICE}): {url}")
+    return url
+
+
+def cloudflare_env() -> dict[str, str]:
+    """wrangler prefers CLOUDFLARE_API_TOKEN over an OAuth login, so a stale one
+    in the shell breaks every deploy while a perfectly good login sits unused."""
+    env = os.environ.copy()
+    token = env.get("CLOUDFLARE_API_TOKEN", "")
+    if not token:
+        return env
+    status, _ = http_get(CF_TOKEN_VERIFY, {"Authorization": f"Bearer {token}"})
+    if status == 200:
+        return env
+    if status in (401, 403):
+        log("deploy", YELLOW, f"CLOUDFLARE_API_TOKEN is rejected by Cloudflare ({status}); "
+                              f"ignoring it and using the wrangler OAuth login")
+        env.pop("CLOUDFLARE_API_TOKEN", None)
+        return env
+    log("deploy", YELLOW, f"could not verify CLOUDFLARE_API_TOKEN (Cloudflare answered {status or 'nothing'}); "
+                          f"using it as-is")
+    return env
+
+
+def deploy_backend(api_base: str) -> None:
+    railway = require_tool(
+        "railway",
+        "npm i -g @railway/cli   (then: railway login && railway link)",
+        "npm i -g @railway/cli   (then: railway login && railway link)",
+    )
+    step(f"Deploying backend → railway '{RAILWAY_SERVICE}'")
+    code, out = capture([railway, "up", "--service", RAILWAY_SERVICE, "--detach"], BACKEND_DIR)
+    print(out.strip())
+    if code != 0:
+        die(f"railway up failed (exit {code})")
+
+    match = re.search(r"id=([0-9a-f-]{36})", out)
+    if not match:
+        die("railway did not report a deployment id; check the build logs it printed")
+    deployment = match.group(1)
+
+    step("Waiting for the build (a failed build leaves prod on the old version)")
+    deadline = time.time() + 900
+    while time.time() < deadline:
+        _, listing = capture([railway, "deployment", "list"], ROOT)
+        row = next((line for line in listing.splitlines() if deployment in line), "")
+        if "SUCCESS" in row:
+            log("deploy", GREEN, f"build succeeded ({deployment[:8]})")
+            break
+        if "FAILED" in row or "CRASHED" in row:
+            die(f"deployment {deployment[:8]} failed; prod is still on the previous version")
+        time.sleep(15)
+    else:
+        die("timed out waiting for the railway build")
+
+    status, body = http_get(f"{api_base}/health")
+    if status != 200:
+        die(f"backend deployed but /health answered {status or 'nothing'}")
+    log("deploy", GREEN, f"backend live → {api_base}/health {body.strip()}")
+
+
+def deploy_ui(api_base: str) -> None:
+    npx = require_tool("npx", "install Node.js", "install Node.js")
+    env = {**os.environ, "NEXT_PUBLIC_API_BASE_URL": api_base}
+
+    step(f"Building the worker against {api_base}")
+    if subprocess.run([npx, "opennextjs-cloudflare", "build"], cwd=str(ROOT), env=env).returncode != 0:
+        die("opennext build failed")
+
+    assets = ROOT / ".open-next" / "assets" / "_next" / "static" / "chunks"
+    chunks = list(assets.glob("*.js")) if assets.exists() else []
+    if not chunks:
+        die("build produced no client chunks; refusing to deploy a bundle I cannot check")
+    blob = "".join(c.read_text(encoding="utf-8", errors="replace") for c in chunks)
+    if api_base not in blob:
+        die(f"the built bundle does not contain {api_base}.\n"
+            f"  it would be deployed pointing somewhere else; not shipping it")
+    stray = sorted(set(re.findall(r"https?://(?:localhost|127\.0\.0\.1):\d+", blob)))
+    if stray:
+        die(f"the built bundle still points at {', '.join(stray)}.\n"
+            f"  deploying it would send prod traffic to a developer machine")
+    log("deploy", GREEN, f"bundle compiled against {api_base}, no localhost left in it")
+
+    cf_env = cloudflare_env()
+    for attempt in range(1, 4):
+        step(f"Deploying ui → cloudflare workers (attempt {attempt}/3)")
+        code, out = capture([npx, "wrangler", "deploy"], ROOT, env=cf_env)
+        print(out.strip())
+        if code == 0 and "Version ID" in out:
+            break
+        # Cloudflare's own API returns 521/522 when it is having a bad day; that
+        # is worth retrying, a rejected credential is not.
+        if not re.search(r"52[0-9]|malformed response", out):
+            die(f"wrangler deploy failed (exit {code})")
+        if attempt == 3:
+            die("cloudflare API kept failing (5xx); prod is unchanged, try again later")
+        time.sleep(30)
+
+    site = worker_url()
+    status, body = http_get(site)
+    if status != 200:
+        die(f"ui deployed but {site} answered {status or 'nothing'}")
+    log("deploy", GREEN, f"ui live → {site} ({status})")
+
+
+def worker_url() -> str:
+    """The route wrangler.jsonc publishes; that is the thing to verify, not a
+    URL passed in by hand."""
+    override = os.environ.get("PROD_SITE_URL", "").rstrip("/")
+    if override:
+        return override
+    try:
+        raw = (ROOT / "wrangler.jsonc").read_text(encoding="utf-8")
+    except OSError:
+        die("wrangler.jsonc not found")
+    stripped = re.sub(r"//.*", "", raw)
+    match = re.search(r'"pattern"\s*:\s*"([^"]+)"', stripped)
+    if not match:
+        die("no route pattern in wrangler.jsonc; set PROD_SITE_URL to verify the deploy")
+    return f"https://{match.group(1)}"
+
+
+def cmd_deploy(args: Args) -> None:
+    deploy_preflight(args)
+    api_base = prod_api_base()
+    if "backend" in args.services:
+        deploy_backend(api_base)
+    if "ui" in args.services:
+        deploy_ui(api_base)
+    print(f"{GREEN}✓ deployed{RESET}")
+
+
 def cmd_docker(args: Args) -> None:
     docker = require_tool("docker", "https://docs.docker.com/engine/install/", "https://docs.docker.com/desktop/")
     compose_file = "docker-compose.minimal.yml" if args.minimal else "docker-compose.yml"
@@ -642,6 +850,7 @@ def main() -> None:
         "lint": cmd_lint,
         "build": cmd_build,
         "docker": cmd_docker,
+        "deploy": cmd_deploy,
     }
     handlers[args.command](args)
 
