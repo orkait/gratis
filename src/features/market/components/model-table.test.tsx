@@ -71,16 +71,18 @@ describe("sortValue", () => {
 });
 
 describe("buildColumns", () => {
-  it("prepends id/tier/caps then appends the dynamic score keys in order", () => {
+  it("prepends the derived columns then appends the dynamic score keys in order", () => {
+    // `cost` joined the derived set so the Cost header is sortable: without a registered column,
+    // SortHead's click handler is undefined and the header is a silent no-op.
     expect(buildColumns(["overall", "intelligence"]).map((c) => c.id)).toEqual([
-      "id", "is_free", "caps", "overall", "intelligence",
+      "id", "is_free", "caps", "cost", "overall", "intelligence",
     ]);
   });
 
   it("dedupes score keys already covered and keeps a stable universe", () => {
-    expect(buildColumns([]).map((c) => c.id)).toEqual(["id", "is_free", "caps"]);
+    expect(buildColumns([]).map((c) => c.id)).toEqual(["id", "is_free", "caps", "cost"]);
     expect(buildColumns(["overall", "overall", "coding"]).map((c) => c.id)).toEqual([
-      "id", "is_free", "caps", "overall", "coding",
+      "id", "is_free", "caps", "cost", "overall", "coding",
     ]);
   });
 

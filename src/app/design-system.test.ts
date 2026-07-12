@@ -156,3 +156,24 @@ describe("the market table has no dead space", () => {
     expect(px("col-model")).toBeGreaterThanOrEqual(380);
   });
 });
+
+
+describe("radius scale", () => {
+  const radius = (name: string): number => {
+    const m = css.match(new RegExp(`--radius-${name}:\\s*(\\d+)px`));
+    if (!m) throw new Error(`--radius-${name} is not defined`);
+    return Number(m[1]);
+  };
+
+  it("ascends", () => {
+    const steps = ["sm", "md", "lg", "xl"].map(radius);
+    expect(steps).toEqual([...steps].sort((a, b) => a - b));
+  });
+
+  it("stays tight enough for a data terminal", () => {
+    // The scale came from the old warm-editorial CHAT surface, where soft corners suited prose. On
+    // a dense table they read as bubbly and blunt the grid. Cards use rounded-lg.
+    expect(radius("lg")).toBeLessThanOrEqual(8);
+    expect(radius("md")).toBeLessThanOrEqual(6);
+  });
+});

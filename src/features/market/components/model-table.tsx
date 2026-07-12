@@ -28,7 +28,7 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
     <div className="rounded-lg border border-(--color-border) overflow-hidden bg-(--color-surface-1)">
       <div className="overflow-x-auto">
         {view.isDecisionView ? (
-          <DecisionTable rows={view.pageRows} start={view.start} metricKey={view.metricKey} />
+          <DecisionTable rows={view.pageRows} start={view.start} metricKey={view.metricKey} table={view.table} />
         ) : (
           <AuditTable rows={view.pageRows} start={view.start} scoreKeys={view.scoreKeys} table={view.table} />
         )}
@@ -48,7 +48,17 @@ export function ModelTable({ models, loading }: { models: ModelStats[]; loading:
   );
 }
 
-function DecisionTable({ rows, start, metricKey }: { rows: ModelStats[]; start: number; metricKey: string }) {
+function DecisionTable({
+  rows,
+  start,
+  metricKey,
+  table,
+}: {
+  rows: ModelStats[];
+  start: number;
+  metricKey: string;
+  table: TableApi<ModelStats>;
+}) {
   const openDrawer = useUIStore((s) => s.openDrawer);
   const drawerModelId = useUIStore((s) => s.drawerModelId);
   const openChat = useOpenChat();
@@ -59,13 +69,16 @@ function DecisionTable({ rows, start, metricKey }: { rows: ModelStats[]; start: 
           of 270 models carry human-preference data. A permanently empty column is not a column, it
           is dead width taken from the signals. The model cell is now a fixed 300px instead of
           absorbing every spare pixel. */}
+      {/* Sortable. These headers used to be inert: the decision view hard-coded its sort to the
+          lens metric and discarded onSortingChange, so a click did nothing at all. Picking a lens
+          still sets the sort; you can now override it, and switching lens puts it back. */}
       <THead>
         <TR className="hover:bg-transparent">
           <TH className="w-col-rank text-right pr-3 font-mono text-xs">#</TH>
-          <TH className="w-col-model">Model</TH>
-          <TH className="w-col-score">{labelFor(metricKey)}</TH>
+          <SortHead table={table} col="id" label="Model" className="w-col-model" />
+          <SortHead table={table} col={metricKey} label={labelFor(metricKey)} className="w-col-score" highlighted />
           <TH>Signals</TH>
-          <TH className="w-col-cost text-right">Cost</TH>
+          <SortHead table={table} col="cost" label="Cost" align="right" className="w-col-cost" />
           <TH className="w-col-action" />
         </TR>
       </THead>

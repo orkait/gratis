@@ -21,6 +21,7 @@ const DERIVED_COLUMNS = {
   free: "is_free",
   capabilities: "caps",
   id: "id",
+  cost: "cost",
 } as const;
 
 const CAPABILITY_WEIGHT = { brain: 4, tools: 2, open: 1 } as const;
@@ -37,6 +38,12 @@ export function sortValue(model: ModelStats, col: SortCol): number | string | un
   if (col === DERIVED_COLUMNS.free) return model.is_free ? 1 : 0;
   if (col === DERIVED_COLUMNS.capabilities) return capabilityRank(model);
   if (col === DERIVED_COLUMNS.id) return model.id;
+  // Free is genuinely 0, not "unknown": it must sort as the cheapest thing there is, not fall to
+  // the bottom with the models whose price we simply do not know.
+  if (col === DERIVED_COLUMNS.cost) {
+    if (model.is_free) return 0;
+    return model.price_out ?? undefined;
+  }
 
   const score = scoreOf(model, col);
   if (score !== undefined) return score;

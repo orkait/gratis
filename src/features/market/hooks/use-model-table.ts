@@ -54,9 +54,13 @@ export function useModelTable(models: ModelStats[]): ModelTableModel {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(Math.max(1, page), totalPages);
 
+  // ONE source of truth for sort, in both views. The decision view used to hard-code
+  // [{ id: metricKey }] and throw away onSortingChange, so clicking a header was a silent no-op.
+  // Picking a lens still sets the sort (setLens writes sort = LENS_METRIC[lens]); the difference is
+  // that the user can now override it, and switching lens puts it back.
   const sorting = useMemo<SortingState>(
-    () => (isDecisionView ? [{ id: metricKey, desc: true }] : [{ id: sort.col, desc: sort.desc }]),
-    [isDecisionView, metricKey, sort.col, sort.desc],
+    () => [{ id: sort.col, desc: sort.desc }],
+    [sort.col, sort.desc],
   );
 
   const pagination = useMemo<PaginationState>(
@@ -66,12 +70,11 @@ export function useModelTable(models: ModelStats[]): ModelTableModel {
 
   const onSortingChange = useCallback<OnChangeFn<SortingState>>(
     (updater) => {
-      if (isDecisionView) return; // the metric sort is derived from the lens, never persisted
       const next = typeof updater === "function" ? updater(sorting) : updater;
       const first = next[0];
       if (first) setSortRaw({ col: first.id, desc: first.desc });
     },
-    [isDecisionView, sorting, setSortRaw],
+    [sorting, setSortRaw],
   );
 
   const onPaginationChange = useCallback<OnChangeFn<PaginationState>>(
