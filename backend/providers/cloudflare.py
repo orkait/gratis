@@ -86,6 +86,12 @@ def build_cloudflare_market_stats(raw: list[dict]) -> list[dict]:
             "name": slug,
             "params": params,
             "ctx": ctx,
+            # Free by allocation, not by price. Workers AI bundles 10,000 Neurons/day at no charge on
+            # the Free plan, so a non-gated model is free to call regardless of its `price` property -
+            # that rate applies only once the daily allocation is spent.
+            # Do NOT derive this from `price`: it would wrongly mark gpt-oss-120b (0.35/M) as paid.
+            # The genuinely-not-free case is a model gated behind Workers Paid, which the API does not
+            # advertise in metadata. availability.py finds those by calling them, and drops them.
             "is_free": True,
             "capability": capability,
             "brain": brain,
