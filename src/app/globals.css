@@ -60,6 +60,13 @@
 
   /* ============ MOTION ============ */
   --animate-shimmer: shimmer 1.4s linear infinite;
+
+  /* ============ LAYOUT ============ */
+  /* Data surfaces stay wide - a dense table wants columns, not reading measure. This caps the
+     ultrawide case (row scanning becomes eye-travel past ~1600px) without squeezing the table.
+     Prose surfaces (chat) cap far tighter; see --width-prose. */
+  --width-market: 1600px;
+  --width-prose: 1100px;
 }
 
 /* light-mode override (data-theme=light on <html>) */

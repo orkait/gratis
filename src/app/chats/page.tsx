@@ -145,7 +145,7 @@ export default function ChatsPage() {
         )}
       </header>
 
-      <main className="max-w-[1100px] mx-auto p-6">
+      <main className="max-w-(--width-prose) mx-auto p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-(--color-fg-subtle)" />
