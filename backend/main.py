@@ -38,6 +38,7 @@ from providers.intelligence import enrich_with_intelligence
 from providers.scoring import score_models
 from providers.arena import fetch_arena_elo, attach_arena
 from providers.ttl_cache import AsyncTTLCache
+from providers.capabilities import degradations, warn_on_startup
 from providers.availability import (
     PROBE_INTERVAL,
     AvailabilityStore,
@@ -138,6 +139,8 @@ async def _probe_sweep() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Say it out loud at boot. Production ran for hours with no AA key and looked fine.
+    warn_on_startup()
     sweep = asyncio.create_task(_probe_sweep())
     try:
         yield
@@ -480,7 +483,13 @@ async def rankings():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    """`degraded` is non-empty when a missing key has quietly broken a feature. A health check that
+    reports "ok" while the market is ranking on a size heuristic is not a health check."""
+    degraded = degradations()
+    return {
+        "status": "ok" if not degraded else "degraded",
+        "degraded": degraded,
+    }
 
 
 @app.get("/")
