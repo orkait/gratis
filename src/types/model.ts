@@ -55,6 +55,13 @@ export type ModelStats = {
   bench_count?: number;         // how many community benchmarks (GPQA, LiveCodeBench, tau-bench, ...) grounded the scores
   /** True when `scores.speed` is a provider-class PRIOR rather than measured throughput. Currently
    *  true for every model - no provider in the pool reports tps - so speed is not shown as a signal. */
+  /** Who BUILT the model ("Anthropic"), derived from the model id. Distinct from `provider` (the
+   *  route you call) and `host` (whose GPUs answer). The row used to show the host, so
+   *  claude-fable-5 was labelled "Google". */
+  author?: string | null;
+  /** The upstream endpoint that actually serves the request ("Amazon Bedrock"). Unstable - it is
+   *  whichever endpoint the aggregator ranked best at fetch time - so it is a detail, not a label. */
+  host?: string | null;
   speed_est?: boolean;
   consensus?: number | null;    // 0..100 cross-benchmark agreement — low = a contested score, don't take at face value
   confidence?: "high" | "medium" | "low"; // how much to trust this row (bench coverage + agreement + estimate flag)

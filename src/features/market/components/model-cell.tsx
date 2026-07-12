@@ -36,8 +36,14 @@ export function ModelCell({ model, showHonesty }: { model: ModelStats; showHones
       </div>
 
       <div className="mt-0.5 flex items-center gap-1.5 text-xs text-(--color-fg-subtle) truncate">
+        {/* Author first: "who made this" is the question a reader is actually asking. The route is
+            how you reach it, shown after. The row used to display the upstream HOST, so
+            claude-fable-5 read as "Google" - and unstably, since the best endpoint changes. */}
         <ProviderAvatar provider={model.provider} size="xs" />
-        <span className="truncate">{model.provider}</span>
+        <span className="truncate">{model.author ?? model.provider}</span>
+        {model.author ? (
+          <span className="shrink-0 text-(--color-fg-subtle)/60">via {model.provider}</span>
+        ) : null}
       </div>
     </div>
   );

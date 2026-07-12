@@ -63,3 +63,26 @@ describe("model cell", () => {
     expect(screen.queryByText("1B")).toBeNull();
   });
 });
+
+describe("author vs route", () => {
+  it("shows who MADE the model, not whose GPUs served it", () => {
+    // The row used to display the upstream endpoint host, so anthropic/claude-fable-5 rendered as
+    // "Google" - and unstably, since the best endpoint changes between refreshes.
+    render(
+      <ModelCell
+        model={M({ id: "anthropic/claude-fable-5", author: "Anthropic", provider: "OpenRouter", host: "Google" })}
+        showHonesty={false}
+      />,
+    );
+
+    expect(screen.getByText("Anthropic")).toBeTruthy();
+    expect(screen.queryByText("Google")).toBeNull(); // the host never impersonates the author
+    expect(screen.getByText(/via OpenRouter/)).toBeTruthy(); // the route is still shown
+  });
+
+  it("falls back to the route when the author is unknown", () => {
+    render(<ModelCell model={M({ id: "groq/llama-3.3-70b", author: null, provider: "Groq" })} showHonesty={false} />);
+    expect(screen.getByText("Groq")).toBeTruthy();
+    expect(screen.queryByText(/via/)).toBeNull();
+  });
+});
