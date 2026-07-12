@@ -2,11 +2,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[background,color,border] duration-[120ms] ease-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[background,color,border] duration-120 ease-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
   {
     variants: {
       variant: {
-        default: "bg-(--color-accent) text-(--color-accent-fg) hover:bg-[oklch(0.55_0.165_265)]",
+        default: "bg-(--color-accent) text-(--color-accent-fg) hover:bg-(--color-accent-hover)",
         outline: "border border-(--color-border-strong) bg-(--color-surface-1) text-(--color-fg) hover:bg-(--color-surface-2)",
         secondary: "bg-(--color-surface-2) text-(--color-fg) hover:bg-(--color-surface-3)",
         ghost: "bg-transparent text-(--color-fg-muted) hover:bg-(--color-surface-1) hover:text-(--color-fg)",

@@ -24,7 +24,7 @@ export function ChatGreeting({
           Connected to <span className="font-mono text-(--color-fg)">{modelId}</span>
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-[640px] mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-dialog mx-auto">
         {PROMPT_SUGGESTIONS.map((suggestion) => (
           <SuggestionButton key={suggestion} suggestion={suggestion} onPick={onPick} />
         ))}
@@ -46,7 +46,7 @@ const SuggestionButton = memo(function SuggestionButton({
     <button
       type="button"
       onClick={handleClick}
-      className="text-left text-sm text-(--color-fg-muted) hover:text-(--color-fg) bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-[120ms]"
+      className="text-left text-sm text-(--color-fg-muted) hover:text-(--color-fg) bg-(--color-surface-1) hover:bg-(--color-surface-2) border border-(--color-border) rounded-lg px-4 py-3 cursor-pointer transition-colors duration-120"
     >
       {suggestion}
     </button>

@@ -280,7 +280,7 @@ function ThreadRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 hover:bg-(--color-surface-2)/40 transition-colors duration-[120ms]",
+        "flex items-center gap-3 p-3 hover:bg-(--color-surface-2)/40 transition-colors duration-120",
         pendingDelete && "bg-(--color-danger-soft)",
       )}
     >
@@ -338,8 +338,8 @@ function BulkDeleteDialog({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-      <div className="rounded-lg bg-(--color-surface-1) border border-(--color-border) p-5 max-w-[400px] w-full">
+    <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center bg-black/60 backdrop-blur-overlay">
+      <div className="rounded-lg bg-(--color-surface-1) border border-(--color-border) p-5 max-w-popover w-full">
         <h2 className="text-lg font-semibold mb-1">Delete all threads?</h2>
         <p className="text-sm text-(--color-fg-muted) mb-4">
           {count} threads will be permanently removed. This cannot be undone.

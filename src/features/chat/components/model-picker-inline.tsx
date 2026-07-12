@@ -61,17 +61,17 @@ export function ModelPickerInline({
         disabled={disabled}
         onClick={handleOpen}
         className={cn(
-          "h-8 px-2.5 rounded-md flex items-center gap-2 text-sm border border-(--color-border) bg-(--color-surface-1) hover:bg-(--color-surface-2) cursor-pointer transition-colors duration-[120ms]",
+          "h-8 px-2.5 rounded-md flex items-center gap-2 text-sm border border-(--color-border) bg-(--color-surface-1) hover:bg-(--color-surface-2) cursor-pointer transition-colors duration-120",
           disabled && "opacity-50 cursor-not-allowed",
         )}
       >
         {current && <ProviderAvatar provider={current.provider} size="xs" />}
-        <span className="font-mono truncate max-w-[260px]">{value || "Pick a model"}</span>
+        <span className="font-mono truncate max-w-tooltip">{value || "Pick a model"}</span>
         <ChevronDown className="w-3 h-3 text-(--color-fg-subtle)" />
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="p-0 max-w-[640px]">
+        <DialogContent className="p-0 max-w-dialog">
           <Command className={classes.root} loop>
             <CommandInput placeholder="Search models..." className={classes.input} />
             <CommandList className={classes.list}>

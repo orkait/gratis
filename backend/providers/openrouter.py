@@ -4,6 +4,8 @@ from typing import TypedDict
 
 import httpx
 
+from providers.params import capability_params, parse_params
+
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
 MODELS_DEV_URL = "https://models.dev/api.json"
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1"
@@ -34,12 +36,6 @@ class ModelStats(TypedDict):
     intel_math: float | None
     intel_est: bool
 
-
-def _parse_params(model_id: str, name: str) -> float:
-    import re
-    text = f"{name}{model_id}".lower()
-    m = re.search(r"(\d+(?:\.\d+)?)b", text)
-    return float(m.group(1)) if m else 1.0
 
 
 def _get_value(capability: float, prompt_price: str, completion_price: str) -> float:
@@ -146,9 +142,9 @@ async def fetch_market_data() -> list[ModelStats]:
         base_stats: list[ModelStats] = []
         for model in target_models:
             dev = find_dev_entry(model)
-            params = _parse_params(model["id"], model.get("name", ""))
+            params = parse_params(model["id"], model.get("name", ""))
             ctx = dev.get("limit", {}).get("context") or model.get("context_length") or 1
-            capability = params * math.log10(ctx + 1)
+            capability = capability_params(params) * math.log10(ctx + 1)
             pricing = model.get("pricing", {})
             is_free = pricing.get("prompt") == "0"
             brain = bool(dev.get("reasoning") or "reasoning" in (model.get("supported_parameters") or []))

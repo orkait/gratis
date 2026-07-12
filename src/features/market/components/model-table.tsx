@@ -55,16 +55,17 @@ function DecisionTable({ rows, start, metricKey }: { rows: ModelStats[]; start: 
 
   return (
     <Table>
+      {/* "Bench · Human" is gone. It read "no votes" on EVERY row: the LMArena source 404s, so zero
+          of 270 models carry human-preference data. A permanently empty column is not a column, it
+          is dead width taken from the signals. The model cell is now a fixed 300px instead of
+          absorbing every spare pixel. */}
       <THead>
         <TR className="hover:bg-transparent">
           <TH className="w-10 text-right pr-3 font-mono text-xs">#</TH>
-          <TH>Model</TH>
-          <TH className="w-36">{labelFor(metricKey)}</TH>
-          <TH className="w-[280px]">Signals</TH>
-          <TH className="w-28" title="Benchmark composite (B) vs human-preference Elo (H)">
-            Bench · Human
-          </TH>
-          <TH className="w-16 text-right">Cost</TH>
+          <TH className="w-col-model">Model</TH>
+          <TH className="w-col-score">{labelFor(metricKey)}</TH>
+          <TH>Signals</TH>
+          <TH className="w-col-cost text-right">Cost</TH>
           <TH className="w-12" />
         </TR>
       </THead>
@@ -150,7 +151,7 @@ function TableSkeleton() {
 
 function EmptyFilters() {
   return (
-    <div className="h-[400px] flex flex-col items-center justify-center text-(--color-fg-subtle) gap-3">
+    <div className="h-empty-state flex flex-col items-center justify-center text-(--color-fg-subtle) gap-3">
       <Ghost className="w-8 h-8" />
       <div className="text-center">
         <div className="text-base font-medium text-(--color-fg-muted)">No models match your filters</div>

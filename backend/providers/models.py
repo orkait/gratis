@@ -4,6 +4,8 @@ import re
 
 import httpx
 
+from providers.params import capability_params, parse_params
+
 OLLAMA_CLOUD_BASE = "https://ollama.com/v1"
 AISTUDIO_BASE = "https://generativelanguage.googleapis.com/v1beta/openai"
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
@@ -17,33 +19,19 @@ DEFAULT_CTX_OLLAMA = 131_072
 DEFAULT_CTX_AISTUDIO = 32_768
 
 
-def _parse_params_from_id(model_id: str) -> float:
-    lower = model_id.lower()
-    m = re.search(r"(\d+(?:\.\d+)?)t\b", lower)
-    if m:
-        return float(m.group(1)) * 1000
-    m = re.search(r"(\d+(?:\.\d+)?)b\b", lower)
-    if m:
-        return float(m.group(1))
-    return 1.0
-
 
 def _is_reasoning(model_id: str) -> bool:
     return bool(re.search(r"gpt-oss|deepseek-v[34]|deepseek-r1|qwen3|kimi-k2", model_id.lower()))
 
 
-def _aistudio_params(slug: str) -> float:
-    lower = slug.lower()
-    m = re.search(r"(\d+(?:\.\d+)?)b\b", lower)
-    if m:
-        return float(m.group(1))
-    if "flash-lite" in lower:
-        return 4.0
-    if "flash" in lower:
-        return 8.0
-    if "pro" in lower:
-        return 70.0
-    return 1.0
+def _aistudio_params(slug: str) -> float | None:
+    """Gemini's size, or None. Google does not publish parameter counts for Gemini.
+
+    This used to invent them: flash-lite -> 4B, flash -> 8B, pro -> 70B. Those numbers came from
+    nowhere and were rendered in the UI as if measured. If Google ever states a size in the model id
+    it is used; otherwise the honest answer is that we do not know.
+    """
+    return parse_params(slug)
 
 
 def _aistudio_ctx(slug: str) -> int:
@@ -102,9 +90,9 @@ def build_market_stats_from_ollama(raw: list[dict]) -> list[dict]:
     result = []
     for m in raw:
         slug = m["id"]
-        params = _parse_params_from_id(slug)
+        params = parse_params(slug)
         ctx = DEFAULT_CTX_OLLAMA
-        capability = params * math.log10(ctx + 1)
+        capability = capability_params(params) * math.log10(ctx + 1)
         brain = _is_reasoning(slug)
         result.append({
             "id": f"ollama/{slug}",
@@ -134,7 +122,7 @@ def build_market_stats_from_aistudio(raw: list[dict]) -> list[dict]:
             continue
         params = _aistudio_params(slug)
         ctx = _aistudio_ctx(slug)
-        capability = params * math.log10(ctx + 1)
+        capability = capability_params(params) * math.log10(ctx + 1)
         brain = "pro" in lower or "thinking" in lower
         # Pro-tier gemini models have no free quota (429 limit:0 on free keys,
         # billed on paid keys). Only flash / flash-lite / gemma are free-callable.

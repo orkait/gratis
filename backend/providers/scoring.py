@@ -214,7 +214,11 @@ def score_models(models: list[Model]) -> list[Model]:
         instruction = _bench_blend(benches, _DIM_BENCHES["instruction"])
         knowledge = _bench_blend(benches, _DIM_BENCHES["knowledge"])
         speed = _norm(r["speed"], speed_lo, speed_hi)
-        if speed is None:  # throughput not measured → provider-class prior (fast free lanes not punished)
+        # `speed_est` marks the difference between MEASURED throughput and an inferred one, the same
+        # way `intel_est` already does for intelligence. 244 of 289 live models fall back to a prior,
+        # and the UI was rendering every one of them as if it were a measurement.
+        speed_est = speed is None
+        if speed_est:  # throughput not measured → provider-class prior (fast free lanes not punished)
             speed = _speed_prior(m)
         context = _norm(r["ctx"], ctx_lo, ctx_hi) or 0.0
 
@@ -274,6 +278,7 @@ def score_models(models: list[Model]) -> list[Model]:
         out.append({**m, "scores": scores, "archetype": _archetype(m, scores),
                     "badges": _badges(m, scores), "bench_count": len(benches),
                     "consensus": consensus,
+                    "speed_est": speed_est,
                     "confidence": _confidence(len(benches), consensus, bool(m.get("intel_est")))})
 
     out.sort(key=lambda x: x["scores"]["overall"], reverse=True)

@@ -118,7 +118,7 @@ const ThreadRow = memo(function ThreadRow({
   return (
     <div
       className={cn(
-        "group w-full rounded-md flex items-center transition-colors duration-[120ms]",
+        "group w-full rounded-md flex items-center transition-colors duration-120",
         active
           ? "bg-(--color-accent-soft) text-(--color-fg)"
           : "text-(--color-fg-muted) hover:bg-(--color-surface-1) hover:text-(--color-fg)",
@@ -136,7 +136,7 @@ const ThreadRow = memo(function ThreadRow({
         type="button"
         onClick={handleDelete}
         aria-label="Delete chat"
-        className="opacity-0 group-hover:opacity-100 transition-opacity duration-[120ms] text-(--color-fg-subtle) hover:text-(--color-danger) cursor-pointer h-9 pl-1 pr-2 flex items-center"
+        className="opacity-0 group-hover:opacity-100 transition-opacity duration-120 text-(--color-fg-subtle) hover:text-(--color-danger) cursor-pointer h-9 pl-1 pr-2 flex items-center"
       >
         <Trash2 className="w-3 h-3" />
       </button>

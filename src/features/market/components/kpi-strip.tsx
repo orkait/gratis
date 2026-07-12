@@ -45,9 +45,9 @@ export function KpiStrip({ models, loading }: { models: ModelStats[]; loading: b
 function KpiCard({ kpi }: { kpi: Kpi }) {
   return (
     <div className="relative overflow-hidden rounded-lg border border-(--color-border) bg-(--color-surface-1) px-4 py-3">
-      <div className={cn("absolute inset-x-0 top-0 h-[2px]", RULE_COLOR[kpi.tone])} />
+      <div className={cn("absolute inset-x-0 top-0 h-rule", RULE_COLOR[kpi.tone])} />
 
-      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-(--color-fg-subtle)">
+      <div className="text-xs font-semibold uppercase tracking-label text-(--color-fg-subtle)">
         {kpi.label}
       </div>
 

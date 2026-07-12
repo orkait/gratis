@@ -62,3 +62,51 @@ describe("no component bypasses the scale", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+
+describe("no arbitrary Tailwind values", () => {
+  /** `w-[300px]` is the same sin as `text-[8px]`: a number nobody registered, nobody can find, and
+   * nobody can change in one place. Everything sizeable must come from a token in globals.css.
+   *
+   * These bracket forms are NOT magic values and are allowed:
+   *   data-[pressed]        variant selector
+   *   group-data-[...]      variant selector
+   *   transition-[width]    property list, not a measurement
+   *   *-[calc(...)]         a computed relationship, which is exactly what a token cannot express
+   */
+  const ALLOWED = /^(data|group-data|peer-data|aria|has|not|supports|transition)-\[/;
+  const COMPUTED = /-\[calc\(/;
+
+  it("has zero unregistered arbitrary values in src", () => {
+    const offenders = tsxFiles("src")
+      .filter((file) => !file.includes(".test."))
+      .flatMap((file) => {
+        const hits = readFileSync(file, "utf8").match(/\b[a-z-]+-\[[^\]]+\]/g) ?? [];
+        return hits
+          .filter((hit) => !ALLOWED.test(hit) && !COMPUTED.test(hit))
+          .map((hit) => `${file}: ${hit}`);
+      });
+
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe("layout tokens are registered", () => {
+  it("every table column width is a token", () => {
+    for (const col of ["col-rank", "col-model", "col-score", "col-cost", "col-action"]) {
+      expect(css).toMatch(new RegExp(`--spacing-${col}:`));
+    }
+  });
+
+  it("every overlay width is a token", () => {
+    for (const overlay of ["tooltip", "drawer", "sheet", "popover", "dialog"]) {
+      expect(css).toMatch(new RegExp(`--container-${overlay}:`));
+    }
+  });
+
+  it("the accent has a hover step, so no component invents one", () => {
+    // button.tsx used to hover to a hardcoded oklch(0.55 0.165 265) - the electric blue from the
+    // PREVIOUS palette, which no longer exists anywhere else in the system.
+    expect(css).toMatch(/--color-accent-hover:/);
+  });
+});

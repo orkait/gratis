@@ -7,7 +7,7 @@ export function TabsList({ className, ...props }: React.ComponentProps<typeof Ba
   return <Base.List data-slot="tabs-list" className={cn("flex items-center gap-1 border-b border-(--color-border) px-1", className)} {...props} />;
 }
 export function TabsTrigger({ className, ...props }: React.ComponentProps<typeof Base.Tab>) {
-  return <Base.Tab data-slot="tabs-trigger" className={cn("h-9 px-3 text-sm text-(--color-fg-muted) data-[selected]:text-(--color-fg) data-[selected]:border-b-2 data-[selected]:border-(--color-accent) -mb-px transition-colors duration-[120ms] cursor-pointer", className)} {...props} />;
+  return <Base.Tab data-slot="tabs-trigger" className={cn("h-9 px-3 text-sm text-(--color-fg-muted) data-[selected]:text-(--color-fg) data-[selected]:border-b-2 data-[selected]:border-(--color-accent) -mb-px transition-colors duration-120 cursor-pointer", className)} {...props} />;
 }
 export function TabsContent({ className, ...props }: React.ComponentProps<typeof Base.Panel>) {
   return <Base.Panel data-slot="tabs-content" className={cn("py-4", className)} {...props} />;
